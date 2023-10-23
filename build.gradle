@@ -1,0 +1,34 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.9.10'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.9.10'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+}
+
+group = 'me.llarence'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.7.2'
+    implementation 'com.calendarfx:calendar:11.12.6'
+    implementation 'com.calendarfx:view:11.12.6'
+    implementation 'org.slf4j:slf4j-nop:2.0.9'
+    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+kotlin {
+    jvmToolchain(8)
+}
+
+javafx {
+    version = "21"
+    modules = ['javafx.controls']
+}
