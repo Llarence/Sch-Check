@@ -1,0 +1,1 @@
+An osu schedule generator.
