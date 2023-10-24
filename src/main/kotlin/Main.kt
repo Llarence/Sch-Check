@@ -3,18 +3,14 @@ import com.calendarfx.model.CalendarSource
 import com.calendarfx.model.Entry
 import com.calendarfx.model.Interval
 import com.calendarfx.view.CalendarView
-import com.sun.javafx.util.Utils.clamp
 import javafx.application.Application
 import javafx.application.Application.launch
 import javafx.application.Platform
-import javafx.event.Event
 import javafx.event.EventHandler
-import javafx.event.EventType
 import javafx.scene.Scene
 import javafx.scene.control.Button
 import javafx.scene.control.TextField
 import javafx.scene.layout.HBox
-import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import javafx.scene.text.Text
 import javafx.stage.Stage
@@ -28,10 +24,14 @@ import kotlin.system.exitProcess
 val coroutineScope = CoroutineScope(Dispatchers.Default)
 val fxScope = CoroutineScope(Dispatchers.JavaFx)
 
+val calendarSaver = Saver(File("saves/calendars/"))
+
 fun LocalDate.withScheduleWeekday(day: Int): LocalDate {
     return this.plusDays((day + 1).mod(7).toLong() - this.dayOfWeek.value)
 }
 
+// TODO: Add calendar name checking for the filename or maybe convert
+//  the filename to something valid with regex or something
 @OptIn(ExperimentalCoroutinesApi::class)
 class App : Application() {
     private lateinit var stage: Stage
@@ -43,12 +43,14 @@ class App : Application() {
     private val calendarScene: Scene
 
     private val calendar: Calendar<Nothing>
-    val nameField = TextField()
+    private val nameField = TextField()
 
-    var calendarNameFormat = ""
+    private var calendarNameFormat = ""
 
-    lateinit var deferredSchedules: Deferred<List<Schedule>>
-    var scheduleIndex = 0
+    private lateinit var deferredSchedules: Deferred<List<Schedule>>
+    private var scheduleIndex = 0
+
+    private var currSchedule: Schedule? = null
 
     init {
         val loadVBox = VBox()
@@ -73,7 +75,22 @@ class App : Application() {
             setCalendarName(new)
         }
 
-        headerHBox.children.addAll(prevButton, nextButton, nameField)
+        val saveButton = Button("Save")
+        saveButton.onAction = EventHandler {
+            if (currSchedule != null) {
+                calendarSaver.save(nameField.text, currSchedule!!)
+            }
+        }
+
+        val loadButton = Button("Load")
+        loadButton.onAction = EventHandler {
+            val schedule = calendarSaver.load(nameField.text)
+            if (schedule != null) {
+                setCalendar(nameField.text, schedule)
+            }
+        }
+
+        headerHBox.children.addAll(prevButton, nextButton, nameField, saveButton, loadButton)
 
         val calendarView = CalendarView()
         calendarVBox.heightProperty().addListener { _, _, new ->
@@ -166,6 +183,8 @@ class App : Application() {
     }
 
     private fun setCalendar(name: String, schedule: Schedule) {
+        currSchedule = schedule
+
         calendarNameFormat = "Name: %s\nCredits: ${schedule.credits}\nGrade: ${schedule.grade}"
         setCalendarName(name)
 

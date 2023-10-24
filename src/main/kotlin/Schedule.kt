@@ -1,8 +1,6 @@
 import kotlinx.coroutines.runBlocking
 import kotlin.random.Random
 
-data class Schedule(val classData: List<ClassData>, val credits: Int, val grade: Double)
-
 // Maybe make all the stuff at the start better
 fun genSchedule(classRequestData: List<Pair<List<String>, Double>>, term: Term, tries: Int, gradeFun: (List<ClassData>, credits: Int) -> Double): List<Schedule> {
     return runBlocking {

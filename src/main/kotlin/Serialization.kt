@@ -18,18 +18,19 @@ val snakeServerJson = Json { ignoreUnknownKeys = true; namingStrategy = JsonNami
 object MeetTimeDurationSerializer : KSerializer<Duration> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("MeetTimeDurationSerializer", PrimitiveKind.STRING)
 
-    override fun serialize(encoder: Encoder, value: kotlin.time.Duration) {
-        encoder.encodeString("${value.inWholeHours}${value.inWholeMinutes - (value.inWholeHours * 60)}")
+    override fun serialize(encoder: Encoder, value: Duration) {
+        val minutes = (value.inWholeMinutes - (value.inWholeHours * 60)).toString().padStart(2, '0')
+        encoder.encodeString("${value.inWholeHours}$minutes")
     }
 
-    override fun deserialize(decoder: Decoder): kotlin.time.Duration {
+    override fun deserialize(decoder: Decoder): Duration {
         val durationString = decoder.decodeString().padStart(4, '0')
         return durationString.substring(0, 2).toInt().hours + durationString.substring(2, 4).toInt().minutes
     }
 }
 
 @Serializable
-data class MeetTime(val meetDay: Int, @Serializable(with = MeetTimeDurationSerializer::class) val startTime: kotlin.time.Duration, @Serializable(with = MeetTimeDurationSerializer::class) val endTime: kotlin.time.Duration)
+data class MeetTime(val meetDay: Int, @Serializable(with = MeetTimeDurationSerializer::class) val startTime: Duration, @Serializable(with = MeetTimeDurationSerializer::class) val endTime: Duration)
 
 object MeetTimesListSerializer : KSerializer<List<MeetTime>> {
     override val descriptor = PrimitiveSerialDescriptor("MeetTimesResponseSerializer", PrimitiveKind.STRING)
@@ -46,7 +47,6 @@ object MeetTimesListSerializer : KSerializer<List<MeetTime>> {
 // TODO: Make camp and enums (camp can be multiple though) and add term to it
 @Serializable
 data class ClassData(val title: String, @SerialName("camp") val campus: String, @SerialName("schd") val schedule: String, val crn: String, @Serializable(with = MeetTimesListSerializer::class) val meetingTimes: List<MeetTime>)
-
 
 @Serializable
 data class SearchResponse(val results: List<ClassData>)
@@ -75,3 +75,6 @@ object SerializableInstantSerializer : KSerializer<SerializableInstant> {
 
 @Serializable
 data class MoreDataResponse(@SerialName("hours_html") val credits: Int)
+
+@Serializable
+data class Schedule(val classData: List<ClassData>, val credits: Int, val grade: Double)

@@ -6,12 +6,10 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
-import java.lang.instrument.Instrumentation
 import java.time.Instant
 import java.time.temporal.TemporalAmount
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
-import kotlin.time.Duration
 
 val cacheJson = Json { allowStructuredMapKeys = true }
 
@@ -35,11 +33,12 @@ class RequestResponseCache(private val file: File, private val retainDuration: T
     init {
         val fileStream = FileInputStream(file)
 
-        data = if (fileStream.available() == 0) {
-            mutableMapOf()
+        if (fileStream.available() == 0) {
+            data = mutableMapOf()
         } else {
             val gzipStream = GZIPInputStream(fileStream)
-            cacheJson.decodeFromStream(gzipStream)
+            data = cacheJson.decodeFromStream(gzipStream)
+            gzipStream.close()
         }
 
         calcSize()
