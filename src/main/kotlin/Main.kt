@@ -19,6 +19,7 @@ import kotlinx.coroutines.javafx.JavaFx
 import java.io.File
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.system.exitProcess
 
 val coroutineScope = CoroutineScope(Dispatchers.Default)
@@ -47,7 +48,7 @@ class App : Application() {
 
     private var calendarNameFormat = ""
 
-    private lateinit var deferredSchedules: Deferred<List<Schedule>>
+    private lateinit var schedules: List<Schedule>
     private var scheduleIndex = 0
 
     private var currSchedule: Schedule? = null
@@ -119,45 +120,40 @@ class App : Application() {
 
     private fun setSceneCalendar() {
         fxScope.launch {
-            deferredSchedules = coroutineScope.async {
-                genSchedule(listOf(
-                    Pair(listOf("MTH 311", "MTH 343", "MTH 351"), 0.1),
-                    Pair(listOf("MTH 311", "MTH 343", "MTH 351"), 0.1),
-                    Pair(listOf("COMM 114"), 0.1),
-                    Pair(listOf("ENGR 103"), 0.1),
-                    Pair(listOf("PH 211"), 0.1),
-                    Pair(listOf("ANTH 284", "BI 102", "BI 103", "BI 204"), 0.1),
-                    Pair(listOf("ED 216", "ED 219", "ENG 220", "ENG 260"), 0.1),
-                    Pair(listOf("ATS 342", "GEO 308", "GEOG 300", "H 312"), 0.1),
-                    Pair(listOf("ANTH 330", "ART 367", "ES 319", "FES 485"), 0.1)
-                ), Term.WINTER, 4000, genScheduleGrader(listOf(), 0.0, 1.0))
-            }
+            val text = AtomicReference<String>()
+            loadText.text = text.get()
 
-            loadText.text = "Loading"
-            val showLoad = launch {
+            val textUpdater = fxScope.launch {
                 while (true) {
-                    loadText.text = "Loading"
-                    delay(300)
-
-                    loadText.text = "Loading."
-                    delay(300)
-
-                    loadText.text = "Loading.."
-                    delay(300)
-
-                    loadText.text = "Loading..."
-                    delay(300)
+                    delay(100)
+                    loadText.text = text.get()
                 }
             }
 
             stage.scene = loadScene
 
-            deferredSchedules.await()
+            schedules = coroutineScope.async {
+                genSchedule(listOf(
+                        Pair(listOf("MTH 311", "MTH 343", "MTH 351"), 0.1),
+                        Pair(listOf("MTH 311", "MTH 343", "MTH 351"), 0.1),
+                        Pair(listOf("COMM 114"), 0.1),
+                        Pair(listOf("ENGR 103"), 0.1),
+                        Pair(listOf("PH 211"), 0.1),
+                        Pair(listOf("ANTH 284", "BI 102", "BI 103", "BI 204"), 0.1),
+                        Pair(listOf("ED 216", "ED 219", "ENG 220", "ENG 260"), 0.1),
+                        Pair(listOf("ATS 342", "GEO 308", "GEOG 300", "H 312"), 0.1),
+                        Pair(listOf("ANTH 330", "ART 367", "ES 319", "FES 485"), 0.1)
+                    ), Term.WINTER,
+                    400000,
+                    genScheduleGrader(listOf(), 0.0, 1.0)) { description, percent ->
+                    text.set(String.format("%s: %.2f%%", description, percent * 100))
+                }
+            }.await()
 
-            showLoad.cancelAndJoin()
+            textUpdater.cancelAndJoin()
 
             scheduleIndex = 0
-            val first = deferredSchedules.getCompleted().firstOrNull()
+            val first = schedules.firstOrNull()
             if (first != null) {
                 setCalendar(scheduleIndex.toString(), first)
             }
@@ -172,8 +168,6 @@ class App : Application() {
     }
 
     private fun shiftSchedule(change: Int) {
-        val schedules = deferredSchedules.getCompleted()
-
         if (schedules.isEmpty()) {
             return
         }
