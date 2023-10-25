@@ -49,7 +49,7 @@ fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
         val requirements = classes
             .map { it.crn to getLinked(it.crn, term) }
             .associate {
-                val value = Pair(it.first, it.second.await())
+                val value = it.first to it.second.await()
 
                 callbackWriteLock.acquire()
                 progress++
@@ -65,7 +65,8 @@ fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
             val randomSchedule = mutableListOf<ClassData>()
             for (j in classRequestData.indices) {
                 val classGroup = classGroups[j]
-                if (Random.nextDouble() >= classRequestDropChances[j]) {
+                // TODO: Remove from lists instead of check isNotEmpty each time
+                if (classGroup.isNotEmpty() && Random.nextDouble() >= classRequestDropChances[j]) {
                     val randomClass = classGroup.random()
                     randomSchedule.add(randomClass)
 
@@ -154,14 +155,14 @@ fun checkIntersect(time1: MeetTime, time2: MeetTime): Boolean {
     return false
 }
 
-fun genScheduleGrader(breaks: List<MeetTime>, breakVal: Double, creditVal: Double): (List<ClassData>, Int) -> Double {
+fun genGradeFun(breaks: List<MeetTime>, breakWeight: Double, creditWeight: Double): (List<ClassData>, Int) -> Double {
     return { classes, credits ->
-        var grade = credits * creditVal
+        var grade = credits * creditWeight
         val classTimes = classes.flatMap { it.meetingTimes }
 
         for (currBreak in breaks) {
             if (checkIntersects(currBreak, classTimes)) {
-                grade -= breakVal
+                grade -= breakWeight
             }
         }
 

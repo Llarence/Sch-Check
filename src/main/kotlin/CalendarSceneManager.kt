@@ -15,7 +15,9 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 object CalendarSceneManager {
-    private val calendarScene: Scene
+    val scene: Scene
+
+    val backButton = Button("Back")
 
     private val calendar: Calendar<Nothing>
     private val nameField = TextField()
@@ -57,7 +59,7 @@ object CalendarSceneManager {
             }
         }
 
-        headerHBox.children.addAll(prevButton, nextButton, nameField, saveButton, loadButton)
+        headerHBox.children.addAll(backButton, prevButton, nextButton, nameField, saveButton, loadButton)
 
         val calendarView = CalendarView()
         calendarVBox.heightProperty().addListener { _, _, new ->
@@ -73,7 +75,7 @@ object CalendarSceneManager {
 
         calendarVBox.children.addAll(headerHBox, calendarView)
 
-        calendarScene = Scene(calendarVBox)
+        scene = Scene(calendarVBox)
 
         fxScope.launch {
             while (true) {
@@ -84,7 +86,7 @@ object CalendarSceneManager {
         }
     }
 
-    fun loadScene(schedules: List<Schedule>): Scene {
+    fun loadSchedules(schedules: List<Schedule>) {
         this.schedules = schedules
 
         scheduleIndex = 0
@@ -92,8 +94,6 @@ object CalendarSceneManager {
         if (first != null) {
             setCalendar(scheduleIndex.toString(), first)
         }
-
-        return calendarScene
     }
 
     private fun setCalendarName(name: String) {

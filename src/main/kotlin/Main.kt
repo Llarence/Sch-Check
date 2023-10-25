@@ -1,6 +1,7 @@
 import javafx.application.Application
 import javafx.application.Application.launch
 import javafx.application.Platform
+import javafx.event.EventHandler
 import javafx.scene.Scene
 import javafx.scene.layout.VBox
 import javafx.scene.text.Text
@@ -32,24 +33,14 @@ class App : Application() {
 
     init {
         val loadVBox = VBox()
+        loadVBox.setPrefSize(Double.MAX_VALUE, Double.MAX_VALUE)
 
         loadVBox.children.add(loadText)
 
         loadScene = Scene(loadVBox)
     }
 
-    override fun start(stage: Stage) {
-        this.stage = stage
-
-        stage.title = "Calendar"
-        stage.isMaximized = true
-        stage.centerOnScreen()
-
-        stage.setOnCloseRequest {
-            Platform.exit()
-            exitProcess(0)
-        }
-
+    private fun transitionToCalendar(argument: ScheduleGenArgument) {
         fxScope.launch {
             val text = AtomicReference<String>()
             loadText.text = text.get()
@@ -64,7 +55,7 @@ class App : Application() {
             stage.scene = loadScene
 
             val schedules = coroutineScope.async {
-                genSchedule(listOf(
+                /*genSchedule(listOf(
                     Pair(listOf("MTH 311"), 0.1),
                     Pair(listOf("MTH 343"), 0.1),
                     Pair(listOf("MTH 351"), 0.1),
@@ -79,13 +70,47 @@ class App : Application() {
                     400000,
                     genGradeFun(listOf(), 0.0, 1.0)) { description, percent ->
                     text.set(String.format("%s: %.2f%%", description, percent * 100))
+                }*/
+                genSchedule(argument.classGroups.map { Pair(it, 0.1) },
+                    Term.WINTER,
+                    40000,
+                    genGradeFun(
+                        argument.gradeFunGeneratorArguments.breaks,
+                        argument.gradeFunGeneratorArguments.breakWeight,
+                        argument.gradeFunGeneratorArguments.creditWeight,
+                    )) { description, percent ->
+                    text.set(String.format("%s: %.2f%%", description, percent * 100))
                 }
             }.await()
 
             textUpdater.cancelAndJoin()
 
-            stage.scene = CalendarSceneManager.loadScene(schedules)
+            CalendarSceneManager.loadSchedules(schedules)
+            stage.scene = CalendarSceneManager.scene
         }
+    }
+
+    override fun start(stage: Stage) {
+        this.stage = stage
+
+        stage.title = "Calendar"
+        stage.isMaximized = true
+        stage.centerOnScreen()
+
+        stage.setOnCloseRequest {
+            Platform.exit()
+            exitProcess(0)
+        }
+
+        ArgumentSceneManager.doneButton.onAction = EventHandler {
+            transitionToCalendar(ArgumentSceneManager.getArgument())
+        }
+
+        CalendarSceneManager.backButton.onAction = EventHandler {
+            stage.scene = ArgumentSceneManager.scene
+        }
+
+        stage.scene = ArgumentSceneManager.scene
 
         stage.show()
     }
