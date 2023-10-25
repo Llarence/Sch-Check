@@ -83,4 +83,4 @@ data class Schedule(val classData: List<ClassData>, val credits: Int, val grade:
 data class GradeFunGenArgument(val breaks: List<MeetTime>, val breakWeight: Double, val creditWeight: Double)
 
 @Serializable
-data class ScheduleGenArgument(val classGroups: List<List<String>>, val gradeFunGeneratorArguments: GradeFunGenArgument)
+data class ScheduleGenArgument(val classGroups: List<List<String>>, val term: Term, val gradeFunGeneratorArguments: GradeFunGenArgument)

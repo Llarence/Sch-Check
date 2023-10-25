@@ -1,4 +1,4 @@
-import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
@@ -11,7 +11,7 @@ import java.util.zip.GZIPOutputStream
 
 // Added gzip just cause
 @OptIn(ExperimentalSerializationApi::class)
-class Saver(private val directory: File) {
+class Saver<T>(private val directory: File, private val serializer: SerializationStrategy<T>, private val deserializer: DeserializationStrategy<T>) {
     init {
         if (!directory.isDirectory) {
             if (!directory.mkdirs()) {
@@ -20,7 +20,14 @@ class Saver(private val directory: File) {
         }
     }
 
-    fun save(name: String, schedule: Schedule) {
+    companion object {
+        inline fun <reified T> create(directory: File): Saver<T> {
+            val serializer = serializer<T>()
+            return Saver(directory, serializer, serializer)
+        }
+    }
+
+    fun save(name: String, value: T) {
         val file = directory.resolve("$name.json.gz")
 
         if (!file.exists()) {
@@ -31,11 +38,11 @@ class Saver(private val directory: File) {
 
         val fileStream = FileOutputStream(file)
         val gzipStream = GZIPOutputStream(fileStream)
-        Json.encodeToStream(schedule, gzipStream)
+        Json.encodeToStream(serializer, value, gzipStream)
         gzipStream.close()
     }
 
-    fun load(name: String): Schedule? {
+    fun load(name: String): T? {
         val file = directory.resolve("$name.json.gz")
 
         if (!file.exists()) {
@@ -44,10 +51,10 @@ class Saver(private val directory: File) {
 
         val fileStream = FileInputStream(file)
         val gzipStream = GZIPInputStream(fileStream)
-        val schedule = Json.decodeFromStream<Schedule>(gzipStream)
+        val value = Json.decodeFromStream(deserializer, gzipStream)
         gzipStream.close()
 
-        return schedule
+        return value
     }
 
     fun getSaveNames(): List<String> {

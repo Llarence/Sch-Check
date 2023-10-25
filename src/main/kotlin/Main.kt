@@ -8,15 +8,12 @@ import javafx.scene.text.Text
 import javafx.stage.Stage
 import kotlinx.coroutines.*
 import kotlinx.coroutines.javafx.JavaFx
-import java.io.File
 import java.time.LocalDate
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.system.exitProcess
 
 val coroutineScope = CoroutineScope(Dispatchers.Default)
 val fxScope = CoroutineScope(Dispatchers.JavaFx)
-
-val calendarSaver = Saver(File("saves/calendars/"))
 
 fun LocalDate.withScheduleWeekday(day: Int): LocalDate {
     return this.plusDays((day + 1).mod(7).toLong() - this.dayOfWeek.value)
@@ -72,7 +69,7 @@ class App : Application() {
                     text.set(String.format("%s: %.2f%%", description, percent * 100))
                 }*/
                 genSchedule(argument.classGroups.map { Pair(it, 0.1) },
-                    Term.WINTER,
+                    argument.term,
                     40000,
                     genGradeFun(
                         argument.gradeFunGeneratorArguments.breaks,

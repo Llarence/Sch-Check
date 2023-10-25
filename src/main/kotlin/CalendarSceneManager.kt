@@ -11,8 +11,11 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.io.File
 import java.time.LocalDate
 import java.time.LocalTime
+
+val calendarSaver = Saver.create<Schedule>(File("saves/calendars/"))
 
 object CalendarSceneManager {
     val scene: Scene
