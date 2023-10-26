@@ -80,7 +80,10 @@ data class MoreDataResponse(@SerialName("hours_html") val credits: Int)
 data class Schedule(val classData: List<ClassData>, val credits: Int, val grade: Double)
 
 @Serializable
-data class GradeFunGenArgument(val breaks: List<MeetTime>, val breakWeight: Double, val creditWeight: Double)
+data class Break(val meetDays: List<Int>, @Serializable(with = MeetTimeDurationSerializer::class) val startTime: Duration, @Serializable(with = MeetTimeDurationSerializer::class) val endTime: Duration)
+
+@Serializable
+data class GradeFunGenArgument(val breaksAndWeights: List<Pair<Break, Double>>, val creditWeight: Double)
 
 @Serializable
 data class ScheduleGenArgument(val classGroups: List<List<String>>, val term: Term, val gradeFunGeneratorArguments: GradeFunGenArgument)

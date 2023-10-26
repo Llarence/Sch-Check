@@ -5,9 +5,6 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.time.Duration
-import java.time.temporal.TemporalAmount
-import java.util.concurrent.atomic.AtomicInteger
-import kotlin.io.path.Path
 
 // TODO: Use @SerialName more and to replace the snakeCase encoder
 
@@ -63,6 +60,7 @@ suspend fun cachedRequest(url: String, post: String? = null): String {
 
         val cacheVal2 = tryCache(cacheKey)
         if (cacheVal2 != null) {
+            requestSemaphore.release()
             return cacheVal2
         }
     }

@@ -72,8 +72,7 @@ class App : Application() {
                     argument.term,
                     40000,
                     genGradeFun(
-                        argument.gradeFunGeneratorArguments.breaks,
-                        argument.gradeFunGeneratorArguments.breakWeight,
+                        argument.gradeFunGeneratorArguments.breaksAndWeights,
                         argument.gradeFunGeneratorArguments.creditWeight,
                     )) { description, percent ->
                     text.set(String.format("%s: %.2f%%", description, percent * 100))

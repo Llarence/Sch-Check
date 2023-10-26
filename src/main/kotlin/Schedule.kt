@@ -29,7 +29,7 @@ fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
 
                     callbackWriteLock.acquire()
                     progress++
-                    workingCallback("Downloading", progress / total)
+                    workingCallback("Downloading Classes", progress / total)
                     callbackWriteLock.release()
 
                     value
@@ -85,23 +85,26 @@ fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
         }
 
         progress = 0.0
-
         workingCallback("Downloading Credits", 0.0)
-        val ungradedSchedules = rawSchedules
-            .map { data -> Pair(data, data.map { getHours(it, term) }) }
-            .map { data ->
+        val classesUsed = rawSchedules.flatten().distinct()
+        val classDataToCredits = classesUsed
+            .associateWith { getHours(it, term) }
+            .mapValues {
                 async {
-                    val value = Pair(data.first, data.second.sumOf { it.await() })
+                    val value = it.value.await()
 
                     callbackWriteLock.acquire()
                     progress++
-                    workingCallback("Downloading Credits", progress / rawSchedules.size)
+                    workingCallback("Downloading Credits", progress / classesUsed.size)
                     callbackWriteLock.release()
 
                     value
                 }.await()
             }
 
+        val ungradedSchedules = rawSchedules.map { classData -> Pair(classData, classData.sumOf { classDataToCredits[it]!! }) }
+
+        progress = 0.0
         workingCallback("Grading Credits", 0.0)
         ungradedSchedules.map { data ->
                 val value = Schedule(data.first, data.second, gradeFun(data.first, data.second))
@@ -135,16 +138,6 @@ fun checkValidTimes(times: List<MeetTime>): Boolean {
     return true
 }
 
-fun checkIntersects(time: MeetTime, times: List<MeetTime>): Boolean {
-    for (other in times) {
-        if (checkIntersect(time, other)) {
-            return true
-        }
-    }
-
-    return false
-}
-
 fun checkIntersect(time1: MeetTime, time2: MeetTime): Boolean {
     if (time1.meetDay == time2.meetDay) {
         if (time1.endTime > time2.startTime && time2.endTime > time1.startTime) {
@@ -155,15 +148,35 @@ fun checkIntersect(time1: MeetTime, time2: MeetTime): Boolean {
     return false
 }
 
-fun genGradeFun(breaks: List<MeetTime>, breakWeight: Double, creditWeight: Double): (List<ClassData>, Int) -> Double {
+fun countIntersects(currBreak: Break, times: List<MeetTime>): Int {
+    var total = 0
+
+    for (other in times) {
+        if (checkIntersect(currBreak, other)) {
+            total++
+        }
+    }
+
+    return total
+}
+
+fun checkIntersect(currBreak: Break, time: MeetTime): Boolean {
+    if (time.meetDay in currBreak.meetDays) {
+        if (currBreak.endTime > time.startTime && time.endTime > currBreak.startTime) {
+            return true
+        }
+    }
+
+    return false
+}
+
+fun genGradeFun(breaksAndWeights: List<Pair<Break, Double>>, creditWeight: Double): (List<ClassData>, Int) -> Double {
     return { classes, credits ->
         var grade = credits * creditWeight
         val classTimes = classes.flatMap { it.meetingTimes }
 
-        for (currBreak in breaks) {
-            if (checkIntersects(currBreak, classTimes)) {
-                grade -= breakWeight
-            }
+        for ((currBreak, weight) in breaksAndWeights) {
+            grade -= weight * countIntersects(currBreak, classTimes)
         }
 
         grade
