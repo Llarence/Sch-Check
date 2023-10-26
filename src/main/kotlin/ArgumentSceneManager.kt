@@ -25,6 +25,7 @@ object ArgumentSceneManager {
     }
 
     private val creditWeightField = TextField()
+    private val backToBackWeightField = TextField()
 
     val doneButton = Button("Done")
 
@@ -53,7 +54,14 @@ object ArgumentSceneManager {
         termSelector.items.addAll(Term.FALL, Term.WINTER, Term.SPRING, Term.SUMMER)
         termSelector.value = Term.FALL
 
-        argumentVBox.children.addAll(header, classGroupsExpandable, termSelector, breaksPicker, creditWeightField, doneButton)
+        argumentVBox.children.addAll(
+            header,
+            classGroupsExpandable,
+            termSelector,
+            breaksPicker,
+            creditWeightField,
+            backToBackWeightField,
+            doneButton)
 
         scene = Scene(argumentVBox)
     }
@@ -79,6 +87,7 @@ object ArgumentSceneManager {
         }
 
         creditWeightField.text = argument.gradeFunGeneratorArguments.creditWeight.toString()
+        backToBackWeightField.text = argument.gradeFunGeneratorArguments.backToBackWeight.toString()
     }
 
     fun getArgument(): ScheduleGenArgument {
@@ -87,7 +96,8 @@ object ArgumentSceneManager {
 
         val breaksAndWeights = breaksPicker.getSubNodes().map { it.get() }
         val creditWeight = creditWeightField.text.toDoubleOrNull() ?: 0.0
-        val genArgument = GradeFunGenArgument(breaksAndWeights, creditWeight)
+        val backToBackWeight = backToBackWeightField.text.toDoubleOrNull() ?: 0.0
+        val genArgument = GradeFunGenArgument(breaksAndWeights, creditWeight, backToBackWeight)
 
         return ScheduleGenArgument(classGroups, termSelector.value, genArgument)
     }

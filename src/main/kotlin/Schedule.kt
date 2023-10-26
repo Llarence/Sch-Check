@@ -1,7 +1,9 @@
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
+import kotlin.math.max
 import kotlin.random.Random
+import kotlin.time.Duration
 
 // Maybe make all the stuff at the start better
 // TODO: Remove all the repeated code for the callback
@@ -9,6 +11,7 @@ import kotlin.random.Random
 fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
                 term: Term,
                 tries: Int,
+                maxSchedules: Int,
                 gradeFun: (List<ClassData>, credits: Int) -> Double,
                 workingCallback: (String, Double) -> Unit = { _, _ -> }): List<Schedule> {
     return runBlocking {
@@ -62,6 +65,10 @@ fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
         workingCallback("Crunching Numbers", 0.0)
         val rawSchedules = mutableListOf<List<ClassData>>()
         for (i in 0..<tries) {
+            if (rawSchedules.size >= maxSchedules) {
+                break
+            }
+
             val randomSchedule = mutableListOf<ClassData>()
             for (j in classRequestData.indices) {
                 val classGroup = classGroups[j]
@@ -81,7 +88,7 @@ fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
                 rawSchedules.add(randomSchedule)
             }
 
-            workingCallback("Crunching Numbers", i.toDouble() / tries)
+            workingCallback("Crunching Numbers", max(rawSchedules.size.toDouble() / maxSchedules, (i + 1).toDouble() / tries))
         }
 
         progress = 0.0
@@ -170,7 +177,7 @@ fun checkIntersect(currBreak: Break, time: MeetTime): Boolean {
     return false
 }
 
-fun genGradeFun(breaksAndWeights: List<Pair<Break, Double>>, creditWeight: Double): (List<ClassData>, Int) -> Double {
+fun genGradeFun(breaksAndWeights: List<Pair<Break, Double>>, creditWeight: Double, backToBackCutoff: Duration, backToBackWeight: Double): (List<ClassData>, Int) -> Double {
     return { classes, credits ->
         var grade = credits * creditWeight
         val classTimes = classes.flatMap { it.meetingTimes }
@@ -178,6 +185,12 @@ fun genGradeFun(breaksAndWeights: List<Pair<Break, Double>>, creditWeight: Doubl
         for ((currBreak, weight) in breaksAndWeights) {
             grade -= weight * countIntersects(currBreak, classTimes)
         }
+
+        val backToBackCount = classTimes.count { classTime ->
+            val backToBackRange = classTime.endTime..(classTime.endTime + backToBackCutoff)
+            classTimes.any { classTime.meetDay == it.meetDay && it.startTime in backToBackRange }
+        }
+        grade += backToBackCount * backToBackWeight
 
         grade
     }

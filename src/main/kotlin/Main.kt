@@ -11,6 +11,7 @@ import kotlinx.coroutines.javafx.JavaFx
 import java.time.LocalDate
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.system.exitProcess
+import kotlin.time.Duration.Companion.minutes
 
 val coroutineScope = CoroutineScope(Dispatchers.Default)
 val fxScope = CoroutineScope(Dispatchers.JavaFx)
@@ -71,9 +72,12 @@ class App : Application() {
                 genSchedule(argument.classGroups.map { Pair(it, 0.1) },
                     argument.term,
                     40000,
+                    100,
                     genGradeFun(
                         argument.gradeFunGeneratorArguments.breaksAndWeights,
                         argument.gradeFunGeneratorArguments.creditWeight,
+                        15.minutes,
+                        argument.gradeFunGeneratorArguments.backToBackWeight
                     )) { description, percent ->
                     text.set(String.format("%s: %.2f%%", description, percent * 100))
                 }
