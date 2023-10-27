@@ -1,7 +1,6 @@
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
-import kotlin.math.max
 import kotlin.random.Random
 import kotlin.time.Duration
 
@@ -11,7 +10,6 @@ import kotlin.time.Duration
 fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
                 term: Term,
                 tries: Int,
-                maxSchedules: Int,
                 gradeFun: (List<ClassData>, credits: Int) -> Double,
                 workingCallback: (String, Double) -> Unit = { _, _ -> }): List<Schedule> {
     return runBlocking {
@@ -65,10 +63,6 @@ fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
         workingCallback("Crunching Numbers", 0.0)
         val rawSchedules = mutableListOf<List<ClassData>>()
         for (i in 0..<tries) {
-            if (rawSchedules.size >= maxSchedules) {
-                break
-            }
-
             val randomSchedule = mutableListOf<ClassData>()
             for (j in classRequestData.indices) {
                 val classGroup = classGroups[j]
@@ -88,7 +82,7 @@ fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
                 rawSchedules.add(randomSchedule)
             }
 
-            workingCallback("Crunching Numbers", max(rawSchedules.size.toDouble() / maxSchedules, (i + 1).toDouble() / tries))
+            workingCallback("Crunching Numbers", (i + 1).toDouble() / tries)
         }
 
         progress = 0.0

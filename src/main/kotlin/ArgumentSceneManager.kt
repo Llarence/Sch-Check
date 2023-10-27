@@ -2,9 +2,10 @@ import javafx.event.EventHandler
 import javafx.scene.Scene
 import javafx.scene.control.Button
 import javafx.scene.control.ComboBox
-import javafx.scene.control.TextField
+import javafx.scene.control.Label
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
+import org.controlsfx.control.textfield.CustomTextField
 import java.io.File
 
 val argumentSaver = Saver.create<ScheduleGenArgument>(File("saves/arguments/"))
@@ -14,7 +15,7 @@ object ArgumentSceneManager {
 
     private val classGroupsExpandable = Expandable(VBox()) {
         Expandable(HBox()) {
-            EmptiableTextField()
+            EmptiableTextField().apply { right = Label("Class") }
         }
     }
 
@@ -24,8 +25,8 @@ object ArgumentSceneManager {
         BreakAndWeightPicker()
     }
 
-    private val creditWeightField = TextField()
-    private val backToBackWeightField = TextField()
+    private val creditWeightField = CustomTextField()
+    private val backToBackWeightField = CustomTextField()
 
     val doneButton = Button("Done")
 
@@ -34,7 +35,8 @@ object ArgumentSceneManager {
 
         val header = HBox()
 
-        val nameField = TextField()
+        val nameField = CustomTextField()
+        nameField.right = Label("Name")
 
         val saveButton = Button("Save")
         saveButton.onAction = EventHandler {
@@ -54,6 +56,10 @@ object ArgumentSceneManager {
         termSelector.items.addAll(Term.FALL, Term.WINTER, Term.SPRING, Term.SUMMER)
         termSelector.value = Term.FALL
 
+        creditWeightField.right = Label("Credit Weight")
+
+        backToBackWeightField.right = Label("Back To Back Weight")
+
         argumentVBox.children.addAll(
             header,
             classGroupsExpandable,
@@ -68,15 +74,16 @@ object ArgumentSceneManager {
 
     private fun setArgument(argument: ScheduleGenArgument) {
         classGroupsExpandable.set(argument.classGroups.size) { i ->
-            val expandable = Expandable(HBox()) {
-                EmptiableTextField()
+            Expandable(HBox()) {
+                EmptiableTextField().apply { right = Label("Class") }
+            }.apply {
+                set(argument.classGroups[i].size) {
+                    EmptiableTextField().apply {
+                        text = argument.classGroups[i][it]
+                        right = Label("Class")
+                    }
+                }
             }
-
-            expandable.set(argument.classGroups[i].size) {
-                EmptiableTextField(argument.classGroups[i][it])
-            }
-
-            expandable
         }
 
         termSelector.value = argument.term

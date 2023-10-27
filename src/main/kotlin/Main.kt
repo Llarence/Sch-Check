@@ -22,6 +22,7 @@ fun LocalDate.withScheduleWeekday(day: Int): LocalDate {
 
 // TODO: Add calendar name checking for the filename or maybe convert
 //  the filename to something valid with regex or something
+// TODO: Use apply more
 class App : Application() {
     private lateinit var stage: Stage
 
@@ -72,7 +73,6 @@ class App : Application() {
                 genSchedule(argument.classGroups.map { Pair(it, 0.1) },
                     argument.term,
                     40000,
-                    100,
                     genGradeFun(
                         argument.gradeFunGeneratorArguments.breaksAndWeights,
                         argument.gradeFunGeneratorArguments.creditWeight,

@@ -1,11 +1,13 @@
+import javafx.beans.Observable
 import javafx.beans.property.BooleanProperty
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.scene.Node
 import javafx.scene.control.CheckBox
-import javafx.scene.control.TextField
+import javafx.scene.control.Label
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
 import javafx.scene.layout.VBox
+import org.controlsfx.control.textfield.CustomTextField
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -47,8 +49,8 @@ interface Emptiable {
     val empty: BooleanProperty
 }
 
-class EmptiableTextField(text: String = "") : TextField(text), Emptiable {
-    override val empty = SimpleBooleanProperty(text == "")
+class EmptiableTextField : CustomTextField(), Emptiable {
+    override val empty = SimpleBooleanProperty(true)
 
     init {
         textProperty().addListener { _, _, new ->
@@ -62,23 +64,27 @@ class BreakAndWeightPicker(currBreak: Break? = null, currWeight: Double? = null)
 
     private val dayCheckBoxes = List(7) { CheckBox(dayNumToChar(it)) }
 
-    private val startTime = TextField()
-    private val endTime = TextField()
+    private val startTime = CustomTextField()
+    private val endTime = CustomTextField()
 
-    private val weight = TextField()
+    private val weight = CustomTextField()
 
     init {
         val checkBoxesHBox = HBox()
 
         checkBoxesHBox.children.addAll(dayCheckBoxes)
 
-        val emptyListener = { _: Any?, _: Any?, _: Any? ->
+        val emptyListener = { _: Observable, _: String, _: String ->
             empty.set(startTime.text == "" && endTime.text == "" && weight.text == "")
         }
 
+        startTime.right = Label("Start Time")
         startTime.textProperty().addListener(emptyListener)
+
+        endTime.right = Label("End Time")
         endTime.textProperty().addListener(emptyListener)
 
+        weight.right = Label("Weight")
         weight.textProperty().addListener(emptyListener)
 
         if (currBreak != null) {

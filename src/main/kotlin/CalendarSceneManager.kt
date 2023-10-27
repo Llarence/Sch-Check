@@ -6,11 +6,12 @@ import com.calendarfx.view.CalendarView
 import javafx.event.EventHandler
 import javafx.scene.Scene
 import javafx.scene.control.Button
-import javafx.scene.control.TextField
+import javafx.scene.control.Label
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.controlsfx.control.textfield.CustomTextField
 import java.io.File
 import java.time.LocalDate
 import java.time.LocalTime
@@ -23,7 +24,7 @@ object CalendarSceneManager {
     val backButton = Button("Back")
 
     private val calendar: Calendar<Nothing>
-    private val nameField = TextField()
+    private val nameField = CustomTextField()
 
     private var calendarNameFormat = ""
 
@@ -43,6 +44,7 @@ object CalendarSceneManager {
         val nextButton = Button("Next")
         nextButton.onAction = EventHandler { shiftSchedule(1) }
 
+        nameField.right = Label("Name")
         nameField.textProperty().addListener { _, _, new ->
             setCalendarName(new)
         }
