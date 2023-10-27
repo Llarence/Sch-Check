@@ -11,7 +11,7 @@ import java.time.temporal.TemporalAmount
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
-val cacheJson = Json { allowStructuredMapKeys = true }
+private val cacheJson = Json { allowStructuredMapKeys = true }
 
 // Added gzip just cause
 // Maybe should move the cache out of ram

@@ -15,10 +15,10 @@ enum class Term {
     WINTER
 }
 
-val client = OkHttpClient()
-val cache = RequestResponseCache(File("./cache.json.gz"), Duration.ofDays(30), 1000L * 1000L * 1000L)
-val cacheLock = Semaphore(1)
-val requestSemaphore = Semaphore(3)
+private val client = OkHttpClient()
+private val cache = RequestResponseCache(File("./cache.json.gz"), Duration.ofDays(30), 1000L * 1000L * 1000L)
+private val cacheLock = Semaphore(1)
+private val requestSemaphore = Semaphore(3)
 
 // Make use year that is why this isn't part of the class
 fun termToDBID(term: Term?): String {
