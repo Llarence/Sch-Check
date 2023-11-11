@@ -18,7 +18,7 @@ enum class Term {
 private val client = OkHttpClient()
 private val cache = RequestResponseCache(File("./cache.json.gz"), Duration.ofDays(30), 1000L * 1000L * 1000L)
 private val cacheLock = Semaphore(1)
-private val requestSemaphore = Semaphore(3)
+private val requestSemaphore = Semaphore(8)
 
 // Make use year that is why this isn't part of the class
 fun termToDBID(term: Term?): String {
@@ -105,13 +105,13 @@ fun getLinked(crn: String, term: Term): Deferred<List<String>> = coroutineScope.
 }
 
 // TODO: Get term from class data and make less lazy (revamp whole extra data stuff instead of being lazy)
-fun getHours(classData: ClassData, term: Term): Deferred<Int> = coroutineScope.async {
+fun getExtraData(classData: ClassData, term: Term): Deferred<MoreDataResponse> = coroutineScope.async {
     val response = cachedRequest(
         "https://classes.oregonstate.edu/api/?page=fose&route=details",
         "{\"group\":\"code:${classData.title}\",\"key\":\"crn:${classData.crn}\",\"srcdb\":\"${termToDBID(term)}\",\"matched\":\"crn:${classData.crn}\"}"
     )
 
-    serverJson.decodeFromString<MoreDataResponse>(response).credits
+    serverJson.decodeFromString<MoreDataResponse>(response)
 }
 
 fun getClass(crn: String): Deferred<ClassData> = coroutineScope.async {

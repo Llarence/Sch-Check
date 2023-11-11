@@ -4,8 +4,10 @@ import com.calendarfx.model.Entry
 import com.calendarfx.model.Interval
 import com.calendarfx.view.CalendarView
 import javafx.event.EventHandler
-import javafx.scene.Scene
+import javafx.scene.control.Alert
+import javafx.scene.control.Alert.AlertType
 import javafx.scene.control.Button
+import javafx.scene.control.ButtonType
 import javafx.scene.control.Label
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
@@ -16,10 +18,11 @@ import java.io.File
 import java.time.LocalDate
 import java.time.LocalTime
 
+
 private val calendarSaver = Saver.create<Schedule>(File("saves/calendars/"))
 
 object CalendarSceneManager {
-    val scene: Scene
+    val root = VBox()
 
     val backButton = Button("Back")
 
@@ -34,8 +37,6 @@ object CalendarSceneManager {
     private var currSchedule: Schedule? = null
 
     init {
-        val calendarVBox = VBox()
-
         val headerHBox = HBox()
 
         val prevButton = Button("Previous")
@@ -52,7 +53,12 @@ object CalendarSceneManager {
         val saveButton = Button("Save")
         saveButton.onAction = EventHandler {
             if (currSchedule != null) {
-                calendarSaver.save(nameField.text, currSchedule!!)
+                val alert = Alert(AlertType.CONFIRMATION, "", ButtonType.YES, ButtonType.NO)
+                alert.showAndWait()
+
+                if (alert.result == ButtonType.YES) {
+                    calendarSaver.save(nameField.text, currSchedule!!)
+                }
             }
         }
 
@@ -67,7 +73,7 @@ object CalendarSceneManager {
         headerHBox.children.addAll(backButton, prevButton, nextButton, nameField, saveButton, loadButton)
 
         val calendarView = CalendarView()
-        calendarVBox.heightProperty().addListener { _, _, new ->
+        root.heightProperty().addListener { _, _, new ->
             calendarView.prefHeight = new.toDouble()
         }
 
@@ -78,9 +84,7 @@ object CalendarSceneManager {
 
         calendarView.calendarSources.add(source)
 
-        calendarVBox.children.addAll(headerHBox, calendarView)
-
-        scene = Scene(calendarVBox)
+        root.children.addAll(headerHBox, calendarView)
 
         fxScope.launch {
             while (true) {
@@ -118,13 +122,13 @@ object CalendarSceneManager {
     private fun setCalendar(name: String, schedule: Schedule) {
         currSchedule = schedule
 
-        calendarNameFormat = "Name: %s\nCredits: ${schedule.credits}\nGrade: ${schedule.grade}"
+        calendarNameFormat = "Name: %s\nCredits: ${schedule.classData.sumOf { it.second.credits }}\nGrade: ${schedule.grade}"
         setCalendarName(name)
 
         calendar.clear()
         val now = LocalDate.now()
         for (classDatum in schedule.classData) {
-            for (meetTime in classDatum.meetingTimes) {
+            for (meetTime in classDatum.first.meetingTimes) {
                 val date = now.withScheduleWeekday(meetTime.meetDay)
 
                 val startHours = meetTime.startTime.inWholeHours.toInt()
@@ -135,7 +139,7 @@ object CalendarSceneManager {
                     date.atTime(endHours, meetTime.endTime.inWholeMinutes.toInt() - (endHours * 60))
                 )
 
-                calendar.addEntry(Entry<Nothing>(classDatum.title, interval))
+                calendar.addEntry(Entry<Nothing>("Tile: ${classDatum.first.title}, Seats: ${classDatum.second.seatsAvailable}", interval))
             }
         }
     }

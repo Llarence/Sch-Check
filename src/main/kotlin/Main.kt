@@ -24,19 +24,14 @@ fun LocalDate.withScheduleWeekday(day: Int): LocalDate {
 //  the filename to something valid with regex or something
 // TODO: Use apply more
 class App : Application() {
-    private lateinit var stage: Stage
+    private lateinit var scene: Scene
 
-    private val loadScene: Scene
+    private val loadRoot = VBox()
 
     private val loadText = Text()
 
     init {
-        val loadVBox = VBox()
-        loadVBox.setPrefSize(Double.MAX_VALUE, Double.MAX_VALUE)
-
-        loadVBox.children.add(loadText)
-
-        loadScene = Scene(loadVBox)
+        loadRoot.children.add(loadText)
     }
 
     private fun transitionToCalendar(argument: ScheduleGenArgument) {
@@ -44,6 +39,7 @@ class App : Application() {
             val text = AtomicReference<String>()
             loadText.text = text.get()
 
+            // This stops the callback from spamming invoke later
             val textUpdater = fxScope.launch {
                 while (true) {
                     delay(100)
@@ -51,25 +47,9 @@ class App : Application() {
                 }
             }
 
-            stage.scene = loadScene
+            scene.root = loadRoot
 
             val schedules = coroutineScope.async {
-                /*genSchedule(listOf(
-                    Pair(listOf("MTH 311"), 0.1),
-                    Pair(listOf("MTH 343"), 0.1),
-                    Pair(listOf("MTH 351"), 0.1),
-                    Pair(listOf("COMM 114"), 0.1),
-                    Pair(listOf("ENGR 103"), 0.1),
-                    Pair(listOf("PH 211"), 0.1),
-                    Pair(listOf("ANTH 284", "BI 102", "BI 103", "BI 204"), 0.1),
-                    Pair(listOf("ED 216", "ED 219", "ENG 220", "ENG 260"), 0.1),
-                    Pair(listOf("ATS 342", "GEO 308", "GEOG 300", "H 312"), 0.1),
-                    Pair(listOf("ANTH 330", "ART 367", "ES 319", "FES 485"), 0.1)
-                ), Term.WINTER,
-                    400000,
-                    genGradeFun(listOf(), 0.0, 1.0)) { description, percent ->
-                    text.set(String.format("%s: %.2f%%", description, percent * 100))
-                }*/
                 genSchedule(argument.classGroups.map { Pair(it, 0.1) },
                     argument.term,
                     40000,
@@ -78,21 +58,19 @@ class App : Application() {
                         argument.gradeFunGeneratorArguments.creditWeight,
                         15.minutes,
                         argument.gradeFunGeneratorArguments.backToBackWeight
-                    )) { description, percent ->
-                    text.set(String.format("%s: %.2f%%", description, percent * 100))
+                    )) { description, completion ->
+                    text.set(String.format("%s: %.2f%%", description, completion * 100))
                 }
             }.await()
 
             textUpdater.cancelAndJoin()
 
             CalendarSceneManager.loadSchedules(schedules)
-            stage.scene = CalendarSceneManager.scene
+            scene.root = CalendarSceneManager.root
         }
     }
 
     override fun start(stage: Stage) {
-        this.stage = stage
-
         stage.title = "Calendar"
         stage.isMaximized = true
         stage.centerOnScreen()
@@ -107,10 +85,11 @@ class App : Application() {
         }
 
         CalendarSceneManager.backButton.onAction = EventHandler {
-            stage.scene = ArgumentSceneManager.scene
+            scene.root = ArgumentSceneManager.root
         }
 
-        stage.scene = ArgumentSceneManager.scene
+        scene = Scene(ArgumentSceneManager.root)
+        stage.scene = scene
 
         stage.show()
     }

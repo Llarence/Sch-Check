@@ -10,7 +10,7 @@ import kotlin.time.Duration
 fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
                 term: Term,
                 tries: Int,
-                gradeFun: (List<ClassData>, credits: Int) -> Double,
+                gradeFun: (List<Pair<ClassData, MoreDataResponse>>) -> Double,
                 workingCallback: (String, Double) -> Unit = { _, _ -> }): List<Schedule> {
     return runBlocking {
         // TODO: Check all the results Type and ID are correct
@@ -18,47 +18,60 @@ fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
         val classRequestDropChances = classRequestData.map { it.second }
 
         val callbackWriteLock = Semaphore(1)
-        var progress = 0.0
 
         val total = classRequestStrings.sumOf { it.size }
+        var progress = 0.0
         workingCallback("Downloading Classes", 0.0)
         val responseGroups = classRequestStrings
             .map { requests -> requests.map { getSearch(it, term) } }
-            .map { responses -> responses.map {
-                async {
-                    val value = it.await()
+            .map { responses ->
+                responses.map {
+                    async {
+                        val value = it.await()
 
-                    callbackWriteLock.acquire()
-                    progress++
-                    workingCallback("Downloading Classes", progress / total)
-                    callbackWriteLock.release()
+                        callbackWriteLock.acquire()
+                        progress++
+                        workingCallback("Downloading Classes", progress / total)
+                        callbackWriteLock.release()
 
-                    value
-                }.await()
-            } }
+                        value
+                    }.await()
+                }
+            }
 
         // TODO: Make the filter actually good
         val classGroups = responseGroups
             .map { group -> group.flatMap { response -> response.results.filter { it.schedule == "A" || it.schedule == "H" }.distinct() } }
 
-        val classes = responseGroups.flatMap { responses -> responses.flatMap { it.results } }
-        val crnToClass = classes.associateBy { it.crn }
+        val oldClasses = responseGroups.flatMap { responses -> responses.flatMap { it.results } }
+        val oldCrns = oldClasses.map { it.crn }
+
+        val newClasses = mutableListOf<ClassData>()
 
         progress = 0.0
-
         workingCallback("Downloading Links", 0.0)
-        val requirements = classes
+        val requirements = oldClasses
             .map { it.crn to getLinked(it.crn, term) }
             .associate {
                 val value = it.first to it.second.await()
 
+                for (linkedCrn in value.second) {
+                    if (linkedCrn !in oldCrns) {
+                        // Should move this into separate await thing
+                        newClasses.add(getClass(linkedCrn).await())
+                    }
+                }
+
                 callbackWriteLock.acquire()
                 progress++
-                workingCallback("Downloading Links", progress / classes.size)
+                workingCallback("Downloading Links", progress / oldClasses.size)
                 callbackWriteLock.release()
 
                 value
             }
+
+        val classes = oldClasses + newClasses
+        val crnToClass = classes.associateBy { it.crn }
 
         workingCallback("Crunching Numbers", 0.0)
         val rawSchedules = mutableListOf<List<ClassData>>()
@@ -85,30 +98,31 @@ fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
             workingCallback("Crunching Numbers", (i + 1).toDouble() / tries)
         }
 
-        progress = 0.0
-        workingCallback("Downloading Credits", 0.0)
         val classesUsed = rawSchedules.flatten().distinct()
-        val classDataToCredits = classesUsed
-            .associateWith { getHours(it, term) }
+
+        progress = 0.0
+        workingCallback("Downloading Extra Data", 0.0)
+        val classDatumToMoreData = classesUsed
+            .associateWith { getExtraData(it, term) }
             .mapValues {
                 async {
                     val value = it.value.await()
 
                     callbackWriteLock.acquire()
                     progress++
-                    workingCallback("Downloading Credits", progress / classesUsed.size)
+                    workingCallback("Downloading Extra Data", progress / classesUsed.size)
                     callbackWriteLock.release()
 
                     value
                 }.await()
             }
 
-        val ungradedSchedules = rawSchedules.map { classData -> Pair(classData, classData.sumOf { classDataToCredits[it]!! }) }
+        val ungradedSchedules = rawSchedules.map { classData -> classData.map { it to classDatumToMoreData[it]!! } }
 
         progress = 0.0
         workingCallback("Grading Credits", 0.0)
         ungradedSchedules.map { data ->
-                val value = Schedule(data.first, data.second, gradeFun(data.first, data.second))
+                val value = Schedule(data, gradeFun(data))
 
                 progress++
                 workingCallback("Grading Schedules", progress / rawSchedules.size)
@@ -171,10 +185,10 @@ fun checkIntersect(currBreak: Break, time: MeetTime): Boolean {
     return false
 }
 
-fun genGradeFun(breaksAndWeights: List<Pair<Break, Double>>, creditWeight: Double, backToBackCutoff: Duration, backToBackWeight: Double): (List<ClassData>, Int) -> Double {
-    return { classes, credits ->
-        var grade = credits * creditWeight
-        val classTimes = classes.flatMap { it.meetingTimes }
+fun genGradeFun(breaksAndWeights: List<Pair<Break, Double>>, creditWeight: Double, backToBackCutoff: Duration, backToBackWeight: Double): (List<Pair<ClassData, MoreDataResponse>>) -> Double {
+    return { classData ->
+        var grade = classData.sumOf { it.second.credits } * creditWeight
+        val classTimes = classData.flatMap { it.first.meetingTimes }
 
         for ((currBreak, weight) in breaksAndWeights) {
             grade -= weight * countIntersects(currBreak, classTimes)

@@ -1,8 +1,5 @@
 import javafx.event.EventHandler
-import javafx.scene.Scene
-import javafx.scene.control.Button
-import javafx.scene.control.ComboBox
-import javafx.scene.control.Label
+import javafx.scene.control.*
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import org.controlsfx.control.textfield.CustomTextField
@@ -11,7 +8,7 @@ import java.io.File
 private val argumentSaver = Saver.create<ScheduleGenArgument>(File("saves/arguments/"))
 
 object ArgumentSceneManager {
-    val scene: Scene
+    val root = VBox()
 
     private val classGroupsExpandable = Expandable(VBox()) {
         Expandable(HBox()) {
@@ -31,8 +28,6 @@ object ArgumentSceneManager {
     val doneButton = Button("Done")
 
     init {
-        val argumentVBox = VBox()
-
         val header = HBox()
 
         val nameField = CustomTextField()
@@ -40,7 +35,12 @@ object ArgumentSceneManager {
 
         val saveButton = Button("Save")
         saveButton.onAction = EventHandler {
-            argumentSaver.save(nameField.text, getArgument())
+            val alert = Alert(Alert.AlertType.CONFIRMATION, "Save?", ButtonType.YES, ButtonType.NO)
+            alert.showAndWait()
+
+            if (alert.result == ButtonType.YES) {
+                argumentSaver.save(nameField.text, getArgument())
+            }
         }
 
         val loadButton = Button("Load")
@@ -60,7 +60,7 @@ object ArgumentSceneManager {
 
         backToBackWeightField.right = Label("Back To Back Weight")
 
-        argumentVBox.children.addAll(
+        root.children.addAll(
             header,
             classGroupsExpandable,
             termSelector,
@@ -68,8 +68,6 @@ object ArgumentSceneManager {
             creditWeightField,
             backToBackWeightField,
             doneButton)
-
-        scene = Scene(argumentVBox)
     }
 
     private fun setArgument(argument: ScheduleGenArgument) {
