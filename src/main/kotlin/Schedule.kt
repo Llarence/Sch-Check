@@ -117,7 +117,7 @@ fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
                 }.await()
             }
 
-        val ungradedSchedules = rawSchedules.map { classData -> classData.map { it to classDatumToMoreData[it]!! } }
+        val ungradedSchedules = rawSchedules.distinct().map { classData -> classData.map { it to classDatumToMoreData[it]!! } }
 
         progress = 0.0
         workingCallback("Grading Credits", 0.0)

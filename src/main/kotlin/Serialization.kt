@@ -77,7 +77,9 @@ object SerializableInstantSerializer : KSerializer<SerializableInstant> {
 data class MoreDataResponse(@SerialName("hours_html") val credits: Int, @SerialName("ssbsect_seats_avail") val seatsAvailable: Int)
 
 @Serializable
-data class Schedule(val classData: List<Pair<ClassData, MoreDataResponse>>, val grade: Double)
+data class Schedule(val classData: List<Pair<ClassData, MoreDataResponse>>, val grade: Double) {
+
+}
 
 @Serializable
 data class Break(val meetDays: List<Int>, @Serializable(with = MeetTimeDurationSerializer::class) val startTime: Duration, @Serializable(with = MeetTimeDurationSerializer::class) val endTime: Duration)
