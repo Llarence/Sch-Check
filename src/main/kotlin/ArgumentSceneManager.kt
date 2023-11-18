@@ -11,9 +11,14 @@ object ArgumentSceneManager {
     val root = VBox()
 
     private val classGroupsExpandable = Expandable(VBox()) {
-        Expandable(HBox()) {
-            EmptiableTextField().apply { right = Label("Class") }
-        }
+        val children = listOf(
+            EmptiableTextField().apply { right = Label("Weight") },
+            Expandable(HBox()) {
+                EmptiableTextField().apply { right = Label("Class") }
+            }
+        )
+
+        EmptiableHBox(children)
     }
 
     private val termSelector = ComboBox<Term>()
@@ -72,16 +77,24 @@ object ArgumentSceneManager {
 
     private fun setArgument(argument: ScheduleGenArgument) {
         classGroupsExpandable.set(argument.classGroups.size) { i ->
-            Expandable(HBox()) {
-                EmptiableTextField().apply { right = Label("Class") }
-            }.apply {
-                set(argument.classGroups[i].size) {
-                    EmptiableTextField().apply {
-                        text = argument.classGroups[i][it]
-                        right = Label("Class")
+            val children = listOf(
+                EmptiableTextField().apply {
+                    text = argument.gradeFunGeneratorArguments.groupWeights[i].toString()
+                    right = Label("Weight")
+                },
+                Expandable(HBox()) {
+                    EmptiableTextField().apply { right = Label("Class") }
+                }.apply {
+                    set(argument.classGroups[i].size) {
+                        EmptiableTextField().apply {
+                            text = argument.classGroups[i][it]
+                            right = Label("Class")
+                        }
                     }
                 }
-            }
+            )
+
+            EmptiableHBox(children)
         }
 
         termSelector.value = argument.term
@@ -96,13 +109,15 @@ object ArgumentSceneManager {
     }
 
     fun getArgument(): ScheduleGenArgument {
-        val classGroups = classGroupsExpandable.getSubNodes()
-            .map { subExpandable -> subExpandable.getSubNodes().map { it.text } }
+        @Suppress("UNCHECKED_CAST")
+        val classGroups = classGroupsExpandable.getSubNodes().map { subNode -> (subNode.children[1] as Expandable<EmptiableTextField>).getSubNodes().map { it.text } }
 
+        val groupWeights = classGroupsExpandable.getSubNodes()
+            .map { subNode -> (subNode.children[0] as EmptiableTextField).text.toDoubleOrNull() ?: 0.0 }
         val breaksAndWeights = breaksPicker.getSubNodes().map { it.get() }
         val creditWeight = creditWeightField.text.toDoubleOrNull() ?: 0.0
         val backToBackWeight = backToBackWeightField.text.toDoubleOrNull() ?: 0.0
-        val genArgument = GradeFunGenArgument(breaksAndWeights, creditWeight, backToBackWeight)
+        val genArgument = GradeFunGenArgument(groupWeights, breaksAndWeights, creditWeight, backToBackWeight)
 
         return ScheduleGenArgument(classGroups, termSelector.value, genArgument)
     }

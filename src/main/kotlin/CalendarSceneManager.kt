@@ -138,7 +138,7 @@ object CalendarSceneManager {
                     date.atTime(endHours, meetTime.endTime.inWholeMinutes.toInt() - (endHours * 60))
                 )
 
-                calendar.addEntry(Entry<Nothing>("Tile: ${classDatum.first.title}, Seats: ${classDatum.second.seatsAvailable}", interval))
+                calendar.addEntry(Entry<Nothing>("Title: ${classDatum.first.title}, Seats: ${classDatum.second.seatsAvailable}, CRN: ${classDatum.first.crn}", interval))
             }
         }
     }

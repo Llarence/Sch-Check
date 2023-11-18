@@ -77,15 +77,13 @@ object SerializableInstantSerializer : KSerializer<SerializableInstant> {
 data class MoreDataResponse(@SerialName("hours_html") val credits: Int, @SerialName("ssbsect_seats_avail") val seatsAvailable: Int)
 
 @Serializable
-data class Schedule(val classData: List<Pair<ClassData, MoreDataResponse>>, val grade: Double) {
-
-}
+data class Schedule(val classData: List<Pair<ClassData, MoreDataResponse>>, val grade: Double)
 
 @Serializable
 data class Break(val meetDays: List<Int>, @Serializable(with = MeetTimeDurationSerializer::class) val startTime: Duration, @Serializable(with = MeetTimeDurationSerializer::class) val endTime: Duration)
 
 @Serializable
-data class GradeFunGenArgument(val breaksAndWeights: List<Pair<Break, Double>>, val creditWeight: Double, val backToBackWeight: Double)
+data class GradeFunGenArgument(val groupWeights: List<Double>, val breaksAndWeights: List<Pair<Break, Double>>, val creditWeight: Double, val backToBackWeight: Double)
 
 @Serializable
 data class ScheduleGenArgument(val classGroups: List<List<String>>, val term: Term, val gradeFunGeneratorArguments: GradeFunGenArgument)

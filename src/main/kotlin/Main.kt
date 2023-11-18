@@ -52,8 +52,9 @@ class App : Application() {
             val schedules = coroutineScope.async {
                 genSchedule(argument.classGroups.map { Pair(it, 0.1) },
                     argument.term,
-                    40000,
+                    1500000,
                     genGradeFun(
+                        argument.gradeFunGeneratorArguments.groupWeights,
                         argument.gradeFunGeneratorArguments.breaksAndWeights,
                         argument.gradeFunGeneratorArguments.creditWeight,
                         15.minutes,

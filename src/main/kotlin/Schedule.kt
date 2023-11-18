@@ -10,7 +10,7 @@ import kotlin.time.Duration
 fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
                 term: Term,
                 tries: Int,
-                gradeFun: (List<Pair<ClassData, MoreDataResponse>>) -> Double,
+                gradeFun: (List<Pair<ClassData, MoreDataResponse>>, List<List<ClassData>>) -> Double,
                 workingCallback: (String, Double) -> Unit = { _, _ -> }): List<Schedule> {
     return runBlocking {
         // TODO: Check all the results Type and ID are correct
@@ -122,7 +122,7 @@ fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
         progress = 0.0
         workingCallback("Grading Credits", 0.0)
         ungradedSchedules.map { data ->
-                val value = Schedule(data, gradeFun(data))
+                val value = Schedule(data, gradeFun(data, classGroups))
 
                 progress++
                 workingCallback("Grading Schedules", progress / rawSchedules.size)
@@ -185,8 +185,12 @@ fun checkIntersect(currBreak: Break, time: MeetTime): Boolean {
     return false
 }
 
-fun genGradeFun(breaksAndWeights: List<Pair<Break, Double>>, creditWeight: Double, backToBackCutoff: Duration, backToBackWeight: Double): (List<Pair<ClassData, MoreDataResponse>>) -> Double {
-    return { classData ->
+fun genGradeFun(groupWeights: List<Double>,
+                breaksAndWeights: List<Pair<Break, Double>>,
+                creditWeight: Double,
+                backToBackCutoff: Duration,
+                backToBackWeight: Double): (List<Pair<ClassData, MoreDataResponse>>, List<List<ClassData>>) -> Double {
+    return { classData, classGroups ->
         var grade = classData.sumOf { it.second.credits } * creditWeight
         val classTimes = classData.flatMap { it.first.meetingTimes }
 
@@ -199,6 +203,13 @@ fun genGradeFun(breaksAndWeights: List<Pair<Break, Double>>, creditWeight: Doubl
             classTimes.any { classTime.meetDay == it.meetDay && it.startTime in backToBackRange }
         }
         grade += backToBackCount * backToBackWeight
+
+        for (classDatum in classData) {
+            val index = classGroups.indexOfFirst { classDatum.first in it }
+            if (index != -1) {
+                grade += groupWeights[index]
+            }
+        }
 
         grade
     }

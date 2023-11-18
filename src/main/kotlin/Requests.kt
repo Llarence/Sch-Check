@@ -75,7 +75,8 @@ suspend fun cachedRequest(url: String, post: String? = null): String {
 }
 
 // TODO: Add argument for campus and move this over to the other api
-fun getSearch(search: String, term: Term?): Deferred<SearchResponse> = coroutineScope.async {
+// TODO: Look at https://prodapps.isadm.oregonstate.edu/StudentRegistrationSsb/ssb/classSearch/classSearch it also supports more categories
+fun getSearch(search: String, term: Term?) = coroutineScope.async {
     // Maybe actually figure this out
     val field = if (' ' in search) {
         "alias"
@@ -95,7 +96,7 @@ fun getSearch(search: String, term: Term?): Deferred<SearchResponse> = coroutine
     serverJson.decodeFromString<SearchResponse>(response)
 }
 
-fun getLinked(crn: String, term: Term): Deferred<List<String>> = coroutineScope.async {
+fun getLinked(crn: String, term: Term) = coroutineScope.async {
     val response = cachedRequest(
         "https://prodapps.isadm.oregonstate.edu/StudentRegistrationSsb/ssb/searchResults/" +
         "fetchLinkedSections?term=${termToDBID(term)}&courseReferenceNumber=$crn"
@@ -105,7 +106,7 @@ fun getLinked(crn: String, term: Term): Deferred<List<String>> = coroutineScope.
 }
 
 // TODO: Get term from class data and make less lazy (revamp whole extra data stuff instead of being lazy)
-fun getExtraData(classData: ClassData, term: Term): Deferred<MoreDataResponse> = coroutineScope.async {
+fun getExtraData(classData: ClassData, term: Term) = coroutineScope.async {
     val response = cachedRequest(
         "https://classes.oregonstate.edu/api/?page=fose&route=details",
         "{\"group\":\"code:${classData.title}\",\"key\":\"crn:${classData.crn}\",\"srcdb\":\"${termToDBID(term)}\",\"matched\":\"crn:${classData.crn}\"}"
@@ -114,6 +115,6 @@ fun getExtraData(classData: ClassData, term: Term): Deferred<MoreDataResponse> =
     serverJson.decodeFromString<MoreDataResponse>(response)
 }
 
-fun getClass(crn: String): Deferred<ClassData> = coroutineScope.async {
+fun getClass(crn: String) = coroutineScope.async {
     getSearch(crn, null).await().results.first { it.crn == crn }
 }

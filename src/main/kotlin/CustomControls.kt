@@ -59,6 +59,22 @@ class EmptiableTextField : CustomTextField(), Emptiable {
     }
 }
 
+class EmptiableHBox(emptiableChildren: List<Emptiable>) : HBox(), Emptiable {
+    override val empty = SimpleBooleanProperty(emptiableChildren.all { it.empty.get() })
+
+    init {
+        for (child in emptiableChildren) {
+            child.empty.addListener { _, _, _ ->
+                empty.set(emptiableChildren.all { it.empty.get() })
+            }
+        }
+
+        // Maybe there is a way to require emptiableChildren to be Node
+        @Suppress("UNCHECKED_CAST")
+        children.addAll(emptiableChildren as List<Node>)
+    }
+}
+
 class BreakAndWeightPicker(currBreak: Break? = null, currWeight: Double? = null) : VBox(), Emptiable {
     override val empty = SimpleBooleanProperty(true)
 
