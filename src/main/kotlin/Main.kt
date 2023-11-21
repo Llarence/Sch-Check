@@ -58,7 +58,9 @@ class App : Application() {
                         argument.gradeFunGeneratorArguments.breaksAndWeights,
                         argument.gradeFunGeneratorArguments.creditWeight,
                         15.minutes,
-                        argument.gradeFunGeneratorArguments.backToBackWeight
+                        argument.gradeFunGeneratorArguments.backToBackWeight,
+                        argument.gradeFunGeneratorArguments.creditLimit,
+                        argument.gradeFunGeneratorArguments.creditLimitWeight
                     )) { description, completion ->
                     text.set(String.format("%s: %.2f%%", description, completion * 100))
                 }

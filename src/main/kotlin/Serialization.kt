@@ -83,7 +83,7 @@ data class Schedule(val classData: List<Pair<ClassData, MoreDataResponse>>, val 
 data class Break(val meetDays: List<Int>, @Serializable(with = MeetTimeDurationSerializer::class) val startTime: Duration, @Serializable(with = MeetTimeDurationSerializer::class) val endTime: Duration)
 
 @Serializable
-data class GradeFunGenArgument(val groupWeights: List<Double>, val breaksAndWeights: List<Pair<Break, Double>>, val creditWeight: Double, val backToBackWeight: Double)
+data class GradeFunGenArgument(val groupWeights: List<Double>, val breaksAndWeights: List<Pair<Break, Double>>, val creditWeight: Double, val backToBackWeight: Double, val creditLimit: Int = 0 , val creditLimitWeight: Double = 0.0)
 
 @Serializable
 data class ScheduleGenArgument(val classGroups: List<List<String>>, val term: Term, val gradeFunGeneratorArguments: GradeFunGenArgument)

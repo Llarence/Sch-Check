@@ -30,6 +30,9 @@ object ArgumentSceneManager {
     private val creditWeightField = CustomTextField()
     private val backToBackWeightField = CustomTextField()
 
+    private val creditLimitField = CustomTextField()
+    private val creditLimitWeightField = CustomTextField()
+
     val doneButton = Button("Done")
 
     init {
@@ -65,6 +68,9 @@ object ArgumentSceneManager {
 
         backToBackWeightField.right = Label("Back To Back Weight")
 
+        creditLimitField.right = Label("Credit Limit")
+        creditLimitWeightField.right = Label("Credit Limit Weight")
+
         root.children.addAll(
             header,
             classGroupsExpandable,
@@ -72,6 +78,8 @@ object ArgumentSceneManager {
             breaksPicker,
             creditWeightField,
             backToBackWeightField,
+            creditLimitField,
+            creditLimitWeightField,
             doneButton)
     }
 
@@ -105,7 +113,11 @@ object ArgumentSceneManager {
         }
 
         creditWeightField.text = argument.gradeFunGeneratorArguments.creditWeight.toString()
+
         backToBackWeightField.text = argument.gradeFunGeneratorArguments.backToBackWeight.toString()
+
+        creditLimitField.text = argument.gradeFunGeneratorArguments.creditLimit.toString()
+        creditLimitWeightField.text = argument.gradeFunGeneratorArguments.creditLimitWeight.toString()
     }
 
     fun getArgument(): ScheduleGenArgument {
@@ -117,9 +129,13 @@ object ArgumentSceneManager {
         val groupWeights = classGroupsExpandable.getSubNodes().dropLast(1)
             .map { subNode -> (subNode.children[0] as EmptiableTextField).text.toDoubleOrNull() ?: 0.0 }
         val breaksAndWeights = breaksPicker.getSubNodes().map { it.get() }
-        val creditWeight = creditWeightField.text.toDoubleOrNull() ?: 0.0
-        val backToBackWeight = backToBackWeightField.text.toDoubleOrNull() ?: 0.0
-        val genArgument = GradeFunGenArgument(groupWeights, breaksAndWeights, creditWeight, backToBackWeight)
+
+        val genArgument = GradeFunGenArgument(groupWeights,
+            breaksAndWeights,
+            creditWeightField.text.toDoubleOrNull() ?: 0.0,
+            backToBackWeightField.text.toDoubleOrNull() ?: 0.0,
+            creditLimitField.text.toIntOrNull() ?: 24,
+            creditLimitWeightField.text.toDoubleOrNull() ?: 0.0)
 
         return ScheduleGenArgument(classGroups, termSelector.value, genArgument)
     }

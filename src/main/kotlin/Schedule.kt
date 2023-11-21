@@ -1,12 +1,14 @@
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
+import kotlin.math.max
 import kotlin.random.Random
 import kotlin.time.Duration
 
 // Maybe make all the stuff at the start better
 // TODO: Remove all the repeated code for the callback
 // TODO: Make it so you don't have to restart to continue downloading
+// TODO: Break into separate functions
 fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
                 term: Term,
                 tries: Int,
@@ -190,11 +192,15 @@ fun genGradeFun(groupWeights: List<Double>,
                 breaksAndWeights: List<Pair<Break, Double>>,
                 creditWeight: Double,
                 backToBackCutoff: Duration,
-                backToBackWeight: Double): (List<Pair<ClassData, MoreDataResponse>>, List<List<ClassData>>) -> Double {
+                backToBackWeight: Double,
+                creditLimit: Int,
+                creditLimitWeight: Double): (List<Pair<ClassData, MoreDataResponse>>, List<List<ClassData>>) -> Double {
     return { classData, classGroups ->
-        var grade = classData.sumOf { it.second.credits } * creditWeight
-        val classTimes = classData.flatMap { it.first.meetingTimes }
+        val credits = classData.sumOf { it.second.credits }
 
+        var grade = (credits * creditWeight) - (max(credits - creditLimit, 0) * creditLimitWeight)
+
+        val classTimes = classData.flatMap { it.first.meetingTimes }
         for ((currBreak, weight) in breaksAndWeights) {
             grade -= weight * countIntersects(currBreak, classTimes)
         }
