@@ -109,10 +109,12 @@ object ArgumentSceneManager {
     }
 
     fun getArgument(): ScheduleGenArgument {
-        @Suppress("UNCHECKED_CAST")
-        val classGroups = classGroupsExpandable.getSubNodes().map { subNode -> (subNode.children[1] as Expandable<EmptiableTextField>).getSubNodes().map { it.text } }
+        val classGroups = classGroupsExpandable.getSubNodes().dropLast(1).map { subNode ->
+            @Suppress("UNCHECKED_CAST")
+            (subNode.children[1] as Expandable<EmptiableTextField>).getSubNodes().map { it.text }
+        }
 
-        val groupWeights = classGroupsExpandable.getSubNodes()
+        val groupWeights = classGroupsExpandable.getSubNodes().dropLast(1)
             .map { subNode -> (subNode.children[0] as EmptiableTextField).text.toDoubleOrNull() ?: 0.0 }
         val breaksAndWeights = breaksPicker.getSubNodes().map { it.get() }
         val creditWeight = creditWeightField.text.toDoubleOrNull() ?: 0.0

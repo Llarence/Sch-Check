@@ -53,7 +53,8 @@ fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
         val requirements = oldClasses
             .map { it.crn to getLinked(it.crn, term) }
             .associate {
-                val value = it.first to it.second.await()
+                // TODO: Check if ?: listOf() always works
+                val value = it.first to (it.second.await() ?: listOf())
 
                 for (linkedCrn in value.second) {
                     if (linkedCrn !in oldCrns) {

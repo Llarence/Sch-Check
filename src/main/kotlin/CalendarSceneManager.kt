@@ -118,6 +118,7 @@ object CalendarSceneManager {
         setCalendar(scheduleIndex.toString(), schedules[scheduleIndex])
     }
 
+    // TODO: Fix some days (Sundays?) having the wrong week
     private fun setCalendar(name: String, schedule: Schedule) {
         currSchedule = schedule
 
