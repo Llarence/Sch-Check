@@ -92,6 +92,7 @@ class App : Application() {
         }
 
         scene = Scene(ArgumentSceneManager.root)
+        scene.stylesheets.add("entry.css")
         stage.scene = scene
 
         stage.show()

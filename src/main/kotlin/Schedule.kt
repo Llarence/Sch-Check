@@ -132,6 +132,8 @@ fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
 
                 value
             }
+            // This maybe should be done earlier?
+            .filter { data -> data.classData.sumOf { it.second.credits } <= 24 }
             .sortedBy { -it.grade }
     }
 }

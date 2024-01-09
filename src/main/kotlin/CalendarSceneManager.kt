@@ -118,7 +118,6 @@ object CalendarSceneManager {
         setCalendar(scheduleIndex.toString(), schedules[scheduleIndex])
     }
 
-    // TODO: Fix some days (Sundays?) having the wrong week
     private fun setCalendar(name: String, schedule: Schedule) {
         currSchedule = schedule
 
@@ -139,7 +138,13 @@ object CalendarSceneManager {
                     date.atTime(endHours, meetTime.endTime.inWholeMinutes.toInt() - (endHours * 60))
                 )
 
-                calendar.addEntry(Entry<Nothing>("Title: ${classDatum.first.title}, Seats: ${classDatum.second.seatsAvailable}, CRN: ${classDatum.first.crn}", interval))
+                // TODO: Make the entry un-modifiable
+                val entry = Entry<Nothing>("Title: ${classDatum.first.title}, Seats: ${classDatum.second.seatsAvailable}, CRN: ${classDatum.first.crn}", interval)
+                entry.recurrenceRule = "RRULE:FREQ=WEEKLY"
+                entry.styleClass.clear()
+                entry.styleClass.add("entry")
+
+                calendar.addEntry(entry)
             }
         }
     }
