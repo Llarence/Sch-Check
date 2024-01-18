@@ -9,7 +9,7 @@ import kotlin.time.Duration
 // TODO: Remove all the repeated code for the callback
 // TODO: Make it so you don't have to restart to continue downloading
 // TODO: Break into separate functions
-fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
+/*fun genSchedule(classRequestData: List<Pair<List<String>, Double>>,
                 term: Term,
                 tries: Int,
                 gradeFun: (List<Pair<ClassData, MoreDataResponse>>, List<List<ClassData>>) -> Double,
@@ -222,4 +222,4 @@ fun genGradeFun(groupWeights: List<Double>,
 
         grade
     }
-}
+}*/

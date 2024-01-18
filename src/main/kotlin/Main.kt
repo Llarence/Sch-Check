@@ -23,7 +23,7 @@ fun LocalDate.withScheduleWeekday(day: Int): LocalDate {
 // TODO: Add calendar name checking for the filename or maybe convert
 //  the filename to something valid with regex or something
 // TODO: Use apply more
-class App : Application() {
+/*class App : Application() {
     private lateinit var scene: Scene
 
     private val loadRoot = VBox()
@@ -97,8 +97,14 @@ class App : Application() {
 
         stage.show()
     }
-}
+}*/
 
 fun main() {
-    launch(App::class.java)
+    // launch(App::class.java)
+
+    val options = searchOptions[3]
+    println(options.term)
+    println(runBlocking {
+        getSearch(Search(subject = options.subjects.random().code, term = options.term.code)).await()
+    })
 }

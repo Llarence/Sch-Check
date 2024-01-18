@@ -13,7 +13,7 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.nanoseconds
 
-fun dayNumToChar(day: Int): String {
+/*fun dayNumToChar(day: Int): String {
     return when (day) {
         0 -> "S"
         1 -> "M"
@@ -193,4 +193,4 @@ class Expandable<T>(private val container: Pane, private val genFun: () -> T) : 
 
         empty.set(container.children.size == 1)
     }
-}
+}*/

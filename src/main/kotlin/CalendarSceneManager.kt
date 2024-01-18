@@ -18,7 +18,7 @@ import java.io.File
 import java.time.LocalDate
 import java.time.LocalTime
 
-private val calendarSaver = Saver.create<Schedule>(File("saves/calendars/"))
+/*private val calendarSaver = Saver.create<Schedule>(File("saves/calendars/"))
 
 object CalendarSceneManager {
     val root = VBox()
@@ -148,4 +148,4 @@ object CalendarSceneManager {
             }
         }
     }
-}
+}*/

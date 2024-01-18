@@ -5,7 +5,7 @@ import javafx.scene.layout.VBox
 import org.controlsfx.control.textfield.CustomTextField
 import java.io.File
 
-private val argumentSaver = Saver.create<ScheduleGenArgument>(File("saves/arguments/"))
+/*private val argumentSaver = Saver.create<ScheduleGenArgument>(File("saves/arguments/"))
 
 object ArgumentSceneManager {
     val root = VBox()
@@ -139,4 +139,4 @@ object ArgumentSceneManager {
 
         return ScheduleGenArgument(classGroups, termSelector.value, genArgument)
     }
-}
+}*/
