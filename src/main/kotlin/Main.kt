@@ -88,20 +88,22 @@ fun LocalDate.withScheduleWeekday(day: Int): LocalDate {
     }
 }*/
 
-fun main() {
+suspend fun main() {
     // launch(App::class.java)
 
     val options = searchOptions[3]
     println(options.term)
 
+    val classGroupResponsesDeferred = mutableListOf<Deferred<List<ClassDataResponse>>>()
+    for (i in 0..<3) {
+        classGroupResponsesDeferred.add(coroutineScope.async { getSearch(Search(subject = options.subjects.random().code, term = options.term.code)) })
+    }
+
+    val classGroupsDeferred = classGroupResponsesDeferred.map { classGroupResponseDeferred ->
+        classGroupResponseDeferred.await().map { coroutineScope.async { convertResponse(it) } }
+    }
+
     runBlocking {
-        println(genSchedules(listOf(
-            getSearch(Search(subject = options.subjects.random().code, term = options.term.code)).await()
-                .map { println(it); convertResponse(it) },
-            getSearch(Search(subject = options.subjects.random().code, term = options.term.code)).await()
-                .map { println(it); convertResponse(it) },
-            getSearch(Search(subject = options.subjects.random().code, term = options.term.code)).await()
-                .map { println(it); convertResponse(it) }
-        ), 1000, 0.2))
+        println(genSchedules(classGroupsDeferred.map { it.awaitAll() }, 1000, 0.2))
     }
 }

@@ -1,4 +1,3 @@
-import kotlinx.coroutines.runBlocking
 import java.time.DayOfWeek
 import kotlin.random.Random
 
@@ -17,7 +16,7 @@ data class MeetTime(val start: DayTime, val end: DayTime, val day: DayOfWeek) {
 // If links is null it is unknown
 data class ClassData(val crn: String, val meetTimes: List<MeetTime>, val links: List<ClassData>?)
 
-fun convertResponse(classDataResponse: ClassDataResponse, link: Boolean = false): ClassData {
+suspend fun convertResponse(classDataResponse: ClassDataResponse, link: Boolean = false): ClassData {
     val meetTimes = mutableListOf<MeetTime>()
 
     for (meetingFaculty in classDataResponse.meetingsFaculty) {
@@ -63,7 +62,7 @@ fun convertResponse(classDataResponse: ClassDataResponse, link: Boolean = false)
     return if (link) {
         ClassData(classDataResponse.crn, meetTimes, null)
     } else {
-        val linksResponse = runBlocking { getLinks(classDataResponse.crn, classDataResponse.term).await() }
+        val linksResponse = getLinks(classDataResponse.crn, classDataResponse.term)
         ClassData(classDataResponse.crn,
             meetTimes,
             // I don't know why there is an outer list it seems to only have one element

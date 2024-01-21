@@ -6,22 +6,22 @@ typealias Option = OptionResponse
 // Having all these requests hidden in by lazy could cause unexpected lag
 val searchOptions by lazy {
     // Why is this capitalized, but others are snake case
-    val terms = runBlocking { getTerms().await() }
+    val terms = runBlocking { getTerms() }
 
     terms.map { SearchOptions(it) }
 }
 
 class SearchOptions(val term: Option) {
-    val subjects by lazy { runBlocking { getOptions("subject", term.code).await() } }
-    val attributes by lazy { runBlocking { getOptions("attribute", term.code).await() } }
-    val campuses by lazy { runBlocking { getOptions("campus", term.code).await() } }
-    val levels by lazy { runBlocking { getOptions("level", term.code).await() } }
-    val buildings by lazy { runBlocking { getOptions("building", term.code).await() } }
-    val colleges by lazy { runBlocking { getOptions("college", term.code).await() } }
-    val departments by lazy { runBlocking { getOptions("department", term.code).await() } }
-    val scheduleTypes by lazy { runBlocking { getOptions("scheduleType", term.code).await() } }
-    val durationTypes by lazy { runBlocking { getOptions("durationType", term.code).await() } }
-    val partsOfTerm by lazy { runBlocking { getOptions("partOfTerm", term.code).await() } }
+    val subjects by lazy { runBlocking { getOptions("subject", term.code) } }
+    val attributes by lazy { runBlocking { getOptions("attribute", term.code) } }
+    val campuses by lazy { runBlocking { getOptions("campus", term.code) } }
+    val levels by lazy { runBlocking { getOptions("level", term.code) } }
+    val buildings by lazy { runBlocking { getOptions("building", term.code) } }
+    val colleges by lazy { runBlocking { getOptions("college", term.code) } }
+    val departments by lazy { runBlocking { getOptions("department", term.code) } }
+    val scheduleTypes by lazy { runBlocking { getOptions("scheduleType", term.code) } }
+    val durationTypes by lazy { runBlocking { getOptions("durationType", term.code) } }
+    val partsOfTerm by lazy { runBlocking { getOptions("partOfTerm", term.code) } }
 }
 
 enum class AMPM(private val value: String) {

@@ -1,10 +1,10 @@
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import okhttp3.*
 import java.io.File
 import java.time.Duration
 import java.util.concurrent.Semaphore
+import java.util.concurrent.atomic.AtomicInteger
 
 // Using java semaphores and with context because kotlin semaphores don't have variable
 //  amounts of permits
@@ -34,18 +34,19 @@ private var currentTerm = ""
 //  then if a thread needs to change term it acquires all the permits
 //  A thread can only acquire all the permits if it has writeTermLock
 //  The threads that want to change the term wait on termChange until
-//  the term changes where they try to acquire writeTermLock.
-//  There is probably better way
-private val termLock = Semaphore(Int.MAX_VALUE)
-private val writeTermLock = Semaphore(1)
-private val termChange = Object()
+//  the term changes where they try to acquire writeTermLock or if the term
+//  they want is on they continue. There is probably better way and
+//  there are probably bugs.
+val termSemaphore = Semaphore(Int.MAX_VALUE)
+val writeTermLock = Semaphore(1)
+val termChange = Object()
 
 private val cache = RequestResponseCache(
         File("./cache.json.gz"),
         Duration.ofDays(30),
         1024L * 1024L * 1024L)
 
-private val requestSemaphore = Semaphore(5)
+val requestSemaphore = Semaphore(5)
 
 fun setTerm(term: String) {
     // This will "make the cookies work"
@@ -63,15 +64,25 @@ fun setTerm(term: String) {
     currentTerm = term
 }
 
+var a = AtomicInteger(0)
+
 // TODO: Check what synchronized does (and if it is deprecated)
+// This will acquire a permit for the thread that runs this
 fun setTermWhenPossible(term: String) {
     while (true) {
-        if (writeTermLock.tryAcquire()) {
-            if (term != currentTerm) {
-                termLock.acquire(Int.MAX_VALUE - 1)
-                setTerm(term)
-                termLock.release(Int.MAX_VALUE - 1)
+        if (term == currentTerm) {
+            termSemaphore.acquire()
+            if (term == currentTerm) {
+                break
+            } else {
+                termSemaphore.release()
             }
+        }
+
+        if (writeTermLock.tryAcquire()) {
+            termSemaphore.acquire(Int.MAX_VALUE)
+            setTerm(term)
+            termSemaphore.release(Int.MAX_VALUE - 1)
 
             writeTermLock.release()
             synchronized(termChange) { termChange.notifyAll() }
@@ -96,12 +107,17 @@ suspend fun cachedRequest(url: String, term: String? = null): String = withConte
 
     var waited = false
     if (term != null) {
-        termLock.acquire()
+        termSemaphore.acquire()
 
         if (term != currentTerm) {
             waited = true
+
+            termSemaphore.release()
+            // This will acquire a termLock in the end
             setTermWhenPossible(term)
         }
+
+        a.getAndIncrement()
     }
 
     if (!requestSemaphore.tryAcquire()) {
@@ -114,42 +130,40 @@ suspend fun cachedRequest(url: String, term: String? = null): String = withConte
 
         if (cacheVal2 != null) {
             requestSemaphore.release()
+            if (term != null) { termSemaphore.release() }
             return@withContext cacheVal2
         }
     }
 
-    println("in ${requestSemaphore.availablePermits()}")
     val response = client.newCall(request).execute().body!!.string()
-    println("out")
+    a.getAndDecrement()
     requestSemaphore.release()
-    if (term != null) {
-        termLock.release()
-    }
+    if (term != null) { termSemaphore.release() }
 
     cache.set(cacheKey, response)
 
     response
 }
 
-fun getTerms() = coroutineScope.async {
+suspend fun getTerms(): List<OptionResponse> {
     val response = cachedRequest(
         "https://prodapps.isadm.oregonstate.edu/StudentRegistrationSsb/ssb/classSearch/" +
                 "getTerms?&offset=1&max=2147483647"
     )
 
-    json.decodeFromString<List<OptionResponse>>(response)
+    return json.decodeFromString<List<OptionResponse>>(response)
 }
 
-fun getOptions(type: String, term: String) = coroutineScope.async {
+suspend fun getOptions(type: String, term: String): List<OptionResponse> {
     val response = cachedRequest(
         "https://prodapps.isadm.oregonstate.edu/StudentRegistrationSsb/ssb/classSearch/" +
                 "get_$type?term=$term&offset=1&max=2147483647"
     )
 
-    json.decodeFromString<List<OptionResponse>>(response)
+    return json.decodeFromString(response)
 }
 
-fun getSearch(search: Search) = coroutineScope.async {
+suspend fun getSearch(search: Search): List<ClassDataResponse> {
     var offset = 0
     val classResponses = mutableListOf<ClassDataResponse>()
     while (true) {
@@ -169,14 +183,14 @@ fun getSearch(search: Search) = coroutineScope.async {
         }
     }
 
-    classResponses
+    return classResponses
 }
 
-fun getLinks(crn: String, term: String) = coroutineScope.async {
+suspend fun getLinks(crn: String, term: String): LinkedSearchResponse {
     val response = cachedRequest(
         "https://prodapps.isadm.oregonstate.edu/StudentRegistrationSsb/ssb/searchResults/" +
                 "fetchLinkedSections?term=$term&courseReferenceNumber=$crn"
     )
 
-    json.decodeFromString<LinkedSearchResponse>(response)
+    return json.decodeFromString(response)
 }
