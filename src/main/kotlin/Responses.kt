@@ -9,24 +9,23 @@ import kotlinx.serialization.json.Json
 val json = Json { ignoreUnknownKeys = true }
 
 @Serializable
-data class Option(val code: String, val description: String)
+data class OptionResponse(val code: String, val description: String)
 
 object DayTimeSerializer : KSerializer<DayTime> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("DayTimeSerializer", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: DayTime) {
-        val minutes = (value.minute - (value.hour * 60)).toString().padStart(2, '0')
-        encoder.encodeString("${value.hour}$minutes")
+        encoder.encodeString("${value.hour}${value.minute}")
     }
 
     override fun deserialize(decoder: Decoder): DayTime {
         val string = decoder.decodeString().padStart(4, '0')
-        return DayTime(string.substring(2, 4).toInt(), string.substring(0, 2).toInt())
+        return DayTime(string.substring(0, 2).toInt(), string.substring(2, 4).toInt())
     }
 }
 
 @Serializable
-data class MeetTime(val monday: Boolean,
+data class MeetingTimeResponse(val monday: Boolean,
                     val tuesday: Boolean,
                     val wednesday: Boolean,
                     val thursday: Boolean,
@@ -37,11 +36,17 @@ data class MeetTime(val monday: Boolean,
                     @Serializable(with = DayTimeSerializer::class) val endTime: DayTime?)
 
 @Serializable
-data class MeetingFaculty(val meetingTime: MeetTime)
+data class MeetingFacultyResponse(val meetingTime: MeetingTimeResponse)
 
 // It is not clear if there can be multiple meetingsFaculty
 @Serializable
-data class ClassData(@SerialName("courseReferenceNumber") val crn: String, val meetingsFaculty: List<MeetingFaculty>)
+data class ClassDataResponse(@SerialName("courseReferenceNumber") val crn: String,
+                             val meetingsFaculty: List<MeetingFacultyResponse>,
+                             val term: String)
 
 @Serializable
-data class SearchResponse(val totalCount: Int, val data: List<ClassData>)
+data class SearchResponse(val totalCount: Int, val data: List<ClassDataResponse>)
+
+// Not sure why the double list the first list only seems to have one element
+@Serializable
+data class LinkedSearchResponse(val linkedData: List<List<ClassDataResponse>>)

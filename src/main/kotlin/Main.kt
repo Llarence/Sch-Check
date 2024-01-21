@@ -1,17 +1,6 @@
-import javafx.application.Application
-import javafx.application.Application.launch
-import javafx.application.Platform
-import javafx.event.EventHandler
-import javafx.scene.Scene
-import javafx.scene.layout.VBox
-import javafx.scene.text.Text
-import javafx.stage.Stage
 import kotlinx.coroutines.*
 import kotlinx.coroutines.javafx.JavaFx
 import java.time.LocalDate
-import java.util.concurrent.atomic.AtomicReference
-import kotlin.system.exitProcess
-import kotlin.time.Duration.Companion.minutes
 
 val coroutineScope = CoroutineScope(Dispatchers.Default)
 val fxScope = CoroutineScope(Dispatchers.JavaFx)
@@ -104,7 +93,15 @@ fun main() {
 
     val options = searchOptions[3]
     println(options.term)
-    println(runBlocking {
-        getSearch(Search(subject = options.subjects.random().code, term = options.term.code)).await()
-    })
+
+    runBlocking {
+        println(genSchedules(listOf(
+            getSearch(Search(subject = options.subjects.random().code, term = options.term.code)).await()
+                .map { println(it); convertResponse(it) },
+            getSearch(Search(subject = options.subjects.random().code, term = options.term.code)).await()
+                .map { println(it); convertResponse(it) },
+            getSearch(Search(subject = options.subjects.random().code, term = options.term.code)).await()
+                .map { println(it); convertResponse(it) }
+        ), 1000, 0.2))
+    }
 }

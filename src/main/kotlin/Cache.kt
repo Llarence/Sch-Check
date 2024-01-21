@@ -16,6 +16,7 @@ import java.time.Instant
 import java.time.temporal.TemporalAmount
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
+import java.util.concurrent.Semaphore
 
 private val cacheJson = Json { allowStructuredMapKeys = true }
 
@@ -39,7 +40,11 @@ object SerializableInstantSerializer : KSerializer<SerializableInstant> {
 // MaxSize is only an estimate
 // TODO: Improve the saving to not redo the whole thing everytime
 @OptIn(ExperimentalSerializationApi::class)
-class RequestResponseCache(private val file: File, private val retainDuration: TemporalAmount, private val maxSize: Long) {
+class RequestResponseCache(private val file: File,
+                           private val retainDuration: TemporalAmount,
+                           private val maxSize: Long) {
+    private val lock = Semaphore(1)
+
     init {
         if (!file.exists()) {
             if (!file.createNewFile()) {
@@ -48,7 +53,7 @@ class RequestResponseCache(private val file: File, private val retainDuration: T
         }
     }
 
-    private val data: MutableMap<Pair<String, String?>, Pair<String, SerializableInstant>>
+    private val data: MutableMap<String, Pair<String, SerializableInstant>>
     private var size = 0L
 
     init {
@@ -61,13 +66,15 @@ class RequestResponseCache(private val file: File, private val retainDuration: T
             data = cacheJson.decodeFromStream(gzipStream)
             gzipStream.close()
         }
+        fileStream.close()
 
         calcSize()
         save()
     }
 
-    private fun getEntrySize(entry: MutableMap.MutableEntry<Pair<String, String?>, Pair<String, SerializableInstant>>): Long {
-        return entry.key.first.length.toLong() + (entry.key.second?.length ?: 0) + entry.value.first.length
+    // Could include the size of the instant
+    private fun getEntrySize(entry: MutableMap.MutableEntry<String, Pair<String, SerializableInstant>>): Long {
+        return (entry.key.length + entry.value.first.length).toLong()
     }
 
     private fun calcSize() {
@@ -94,25 +101,32 @@ class RequestResponseCache(private val file: File, private val retainDuration: T
     }
 
     // A huge datum could just be instantly deleted if it is over the maxSize
-    fun set(key: Pair<String, String?>, value: String) {
+    fun set(key: String, value: String) {
+        lock.acquire()
         data[key] = Pair(value, SerializableInstant(Instant.now()))
 
         // This is probably really inefficient
         save()
+        lock.release()
     }
 
-    fun getOrNull(string: Pair<String, String?>): String? {
+    fun getOrNull(string: String): String? {
+        lock.acquire()
+
         val datum = data[string]
-        if (datum != null) {
-            return if (datum.second.instant + retainDuration < Instant.now()) {
+        val output = if (datum != null) {
+            if (datum.second.instant + retainDuration < Instant.now()) {
                 data.remove(string)
                 null
             } else {
                 datum.first
             }
+        } else {
+            null
         }
 
-        return null
+        lock.release()
+        return output
     }
 
     private fun save() {
@@ -122,5 +136,6 @@ class RequestResponseCache(private val file: File, private val retainDuration: T
         val gzipStream = GZIPOutputStream(fileStream)
         cacheJson.encodeToStream(data, gzipStream)
         gzipStream.close()
+        fileStream.close()
     }
 }

@@ -1,9 +1,19 @@
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.withContext
 import okhttp3.*
 import java.io.File
 import java.time.Duration
+import java.util.concurrent.Semaphore
 
+// Using java semaphores and with context because kotlin semaphores don't have variable
+//  amounts of permits
+
+data class Query(val code: String, val value: String) {
+    override fun toString(): String {
+        return "$code=$value"
+    }
+}
 
 private val cookieJar = object : CookieJar {
     val cookies = mutableListOf<Cookie>()
@@ -18,26 +28,24 @@ private val cookieJar = object : CookieJar {
 }
 private val client = OkHttpClient.Builder().cookieJar(cookieJar).build()
 
+@Volatile
 private var currentTerm = ""
+// Term lock has each thread remove one permit if it is using term
+//  then if a thread needs to change term it acquires all the permits
+//  A thread can only acquire all the permits if it has writeTermLock
+//  The threads that want to change the term wait on termChange until
+//  the term changes where they try to acquire writeTermLock.
+//  There is probably better way
+private val termLock = Semaphore(Int.MAX_VALUE)
+private val writeTermLock = Semaphore(1)
+private val termChange = Object()
 
-private val cache = RequestResponseCache(File("./cache.json.gz"), Duration.ofDays(30), 1000L * 1000L * 1000L)
-private val cacheLock = Semaphore(1)
+private val cache = RequestResponseCache(
+        File("./cache.json.gz"),
+        Duration.ofDays(30),
+        1024L * 1024L * 1024L)
 
-private val requestSemaphore = Semaphore(1)
-
-data class Query(val code: String, val value: String) {
-    override fun toString(): String {
-        return "$code=$value"
-    }
-}
-
-suspend fun tryCache(key: Pair<String, String>): String? {
-    cacheLock.acquire()
-    val cached = cache.getOrNull(key)
-    cacheLock.release()
-
-    return cached
-}
+private val requestSemaphore = Semaphore(5)
 
 fun setTerm(term: String) {
     // This will "make the cookies work"
@@ -50,43 +58,77 @@ fun setTerm(term: String) {
                 .add("studyPathText", "")
                 .add("startDatepicker", "")
                 .build()
-        ).build()).execute()
+        ).build()).execute().close()
 
     currentTerm = term
 }
 
-// TODO: Probably better to use requestSemaphore.with
-suspend fun cachedRequest(url: String, term: String? = null): String {
-    val cacheKey = Pair(url, term ?: "")
-    val cacheVal1 = tryCache(cacheKey)
+// TODO: Check what synchronized does (and if it is deprecated)
+fun setTermWhenPossible(term: String) {
+    while (true) {
+        if (writeTermLock.tryAcquire()) {
+            if (term != currentTerm) {
+                termLock.acquire(Int.MAX_VALUE - 1)
+                setTerm(term)
+                termLock.release(Int.MAX_VALUE - 1)
+            }
+
+            writeTermLock.release()
+            synchronized(termChange) { termChange.notifyAll() }
+
+            break
+        } else {
+            synchronized(termChange) { termChange.wait() }
+        }
+    }
+}
+
+suspend fun cachedRequest(url: String, term: String? = null): String = withContext(Dispatchers.IO) {
+    // Hope this doesn't cause any collisions
+    val cacheKey = (term ?: "") + url
+
+    val cacheVal1 = cache.getOrNull(cacheKey)
     if (cacheVal1 != null) {
-        return cacheVal1
+        return@withContext cacheVal1
     }
 
     val request = Request.Builder().url(url).get().build()
 
-    if (!requestSemaphore.tryAcquire()) {
-        requestSemaphore.acquire()
+    var waited = false
+    if (term != null) {
+        termLock.acquire()
 
-        val cacheVal2 = tryCache(cacheKey)
-        if (cacheVal2 != null) {
-            requestSemaphore.release()
-            return cacheVal2
+        if (term != currentTerm) {
+            waited = true
+            setTermWhenPossible(term)
         }
     }
 
-    if (term != null && currentTerm != term) {
-        setTerm(term)
+    if (!requestSemaphore.tryAcquire()) {
+        waited = true
+        requestSemaphore.acquire()
     }
 
+    if (waited) {
+        val cacheVal2 = cache.getOrNull(cacheKey)
+
+        if (cacheVal2 != null) {
+            requestSemaphore.release()
+            return@withContext cacheVal2
+        }
+    }
+
+    println("in ${requestSemaphore.availablePermits()}")
     val response = client.newCall(request).execute().body!!.string()
+    println("out")
     requestSemaphore.release()
+    if (term != null) {
+        termLock.release()
+    }
 
-    cacheLock.acquire()
     cache.set(cacheKey, response)
-    cacheLock.release()
 
-    return response
+    response
 }
 
 fun getTerms() = coroutineScope.async {
@@ -95,7 +137,7 @@ fun getTerms() = coroutineScope.async {
                 "getTerms?&offset=1&max=2147483647"
     )
 
-    json.decodeFromString<List<Option>>(response)
+    json.decodeFromString<List<OptionResponse>>(response)
 }
 
 fun getOptions(type: String, term: String) = coroutineScope.async {
@@ -104,12 +146,12 @@ fun getOptions(type: String, term: String) = coroutineScope.async {
                 "get_$type?term=$term&offset=1&max=2147483647"
     )
 
-    json.decodeFromString<List<Option>>(response)
+    json.decodeFromString<List<OptionResponse>>(response)
 }
 
 fun getSearch(search: Search) = coroutineScope.async {
     var offset = 0
-    val classResponses = mutableListOf<ClassData>()
+    val classResponses = mutableListOf<ClassDataResponse>()
     while (true) {
         val response = cachedRequest(
             "https://prodapps.isadm.oregonstate.edu/StudentRegistrationSsb/ssb/searchResults/" +
@@ -128,4 +170,13 @@ fun getSearch(search: Search) = coroutineScope.async {
     }
 
     classResponses
+}
+
+fun getLinks(crn: String, term: String) = coroutineScope.async {
+    val response = cachedRequest(
+        "https://prodapps.isadm.oregonstate.edu/StudentRegistrationSsb/ssb/searchResults/" +
+                "fetchLinkedSections?term=$term&courseReferenceNumber=$crn"
+    )
+
+    json.decodeFromString<LinkedSearchResponse>(response)
 }

@@ -1,6 +1,8 @@
 import kotlinx.coroutines.runBlocking
 import java.time.DayOfWeek
 
+typealias Option = OptionResponse
+
 // Having all these requests hidden in by lazy could cause unexpected lag
 val searchOptions by lazy {
     // Why is this capitalized, but others are snake case
@@ -34,6 +36,7 @@ enum class AMPM(private val value: String) {
 data class DayTime(val hour: Int, val minute: Int) {
     val amPM = if (hour < 12) { AMPM.AM } else {AMPM.PM }
     val hour12: Int
+    val inMinutes = (hour * 60) + minute
 
     init {
         val tempHour = if (hour < 12) {
@@ -75,7 +78,7 @@ data class Search(val subject: String? = null,
                   val end: DayTime? = null,
                   val openOnly: Boolean = false,
                   val term: String) {
-    fun toQuery(): List<Query> {
+    fun toQueries(): List<Query> {
         val queries = mutableListOf<Query>()
 
         if (subject != null) { queries.add(Query("txt_subject", subject)) }
@@ -123,6 +126,6 @@ data class Search(val subject: String? = null,
     }
 
     override fun toString(): String {
-        return toQuery().joinToString("&")
+        return toQueries().joinToString("&")
     }
 }
