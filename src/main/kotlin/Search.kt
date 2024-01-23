@@ -1,4 +1,5 @@
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.Serializable
 import java.time.DayOfWeek
 
 typealias Option = OptionResponse
@@ -8,7 +9,7 @@ val searchOptions by lazy {
     // Why is this capitalized, but others are snake case
     val terms = runBlocking { getTerms() }
 
-    terms.map { SearchOptions(it) }
+    terms.associateWith { SearchOptions(it) }
 }
 
 class SearchOptions(val term: Option) {
@@ -20,7 +21,7 @@ class SearchOptions(val term: Option) {
     val colleges by lazy { runBlocking { getOptions("college", term.code) } }
     val departments by lazy { runBlocking { getOptions("department", term.code) } }
     val scheduleTypes by lazy { runBlocking { getOptions("scheduleType", term.code) } }
-    val durationTypes by lazy { runBlocking { getOptions("durationType", term.code) } }
+    val durationTypes by lazy { runBlocking { getOptions("duration", term.code) } }
     val partsOfTerm by lazy { runBlocking { getOptions("partOfTerm", term.code) } }
 }
 
@@ -33,6 +34,7 @@ enum class AMPM(private val value: String) {
     }
 }
 
+@Serializable
 data class DayTime(val hour: Int, val minute: Int) {
     val amPM = if (hour < 12) { AMPM.AM } else {AMPM.PM }
     val hour12: Int
@@ -54,6 +56,7 @@ data class DayTime(val hour: Int, val minute: Int) {
 }
 
 // Some things could be enums, but there would be too many values (and they may change)
+@Serializable
 data class Search(val subject: String? = null,
                   val courseNumber: Int? = null,
                   val keyword: String? = null,
@@ -71,8 +74,8 @@ data class Search(val subject: String? = null,
                   val durationValue: Double? = null,
                   val durationType: String? = null,
                   val partOfTerm: String? = null,
-                  val courseNumberRangeLow: Double? = null,
-                  val courseNumberRangeHigh: Double? = null,
+                  val courseNumberRangeLow: Int? = null,
+                  val courseNumberRangeHigh: Int? = null,
                   val days: Set<DayOfWeek> = setOf(),
                   val start: DayTime? = null,
                   val end: DayTime? = null,

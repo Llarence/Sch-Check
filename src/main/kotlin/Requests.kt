@@ -4,7 +4,6 @@ import okhttp3.*
 import java.io.File
 import java.time.Duration
 import java.util.concurrent.Semaphore
-import java.util.concurrent.atomic.AtomicInteger
 
 // Using java semaphores and with context because kotlin semaphores don't have variable
 //  amounts of permits
@@ -64,8 +63,6 @@ fun setTerm(term: String) {
     currentTerm = term
 }
 
-var a = AtomicInteger(0)
-
 // TODO: Check what synchronized does (and if it is deprecated)
 // This will acquire a permit for the thread that runs this
 fun setTermWhenPossible(term: String) {
@@ -116,8 +113,6 @@ suspend fun cachedRequest(url: String, term: String? = null): String = withConte
             // This will acquire a termLock in the end
             setTermWhenPossible(term)
         }
-
-        a.getAndIncrement()
     }
 
     if (!requestSemaphore.tryAcquire()) {
@@ -136,7 +131,6 @@ suspend fun cachedRequest(url: String, term: String? = null): String = withConte
     }
 
     val response = client.newCall(request).execute().body!!.string()
-    a.getAndDecrement()
     requestSemaphore.release()
     if (term != null) { termSemaphore.release() }
 

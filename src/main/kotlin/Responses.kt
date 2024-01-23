@@ -38,7 +38,8 @@ data class MeetingTimeResponse(val monday: Boolean,
 @Serializable
 data class MeetingFacultyResponse(val meetingTime: MeetingTimeResponse)
 
-// It is not clear if there can be multiple meetingsFaculty
+// TODO: Figure out what multiple meetingsFaculties would mean
+//  selecting term and hitting search shows some with multiple meetingsFaculties
 @Serializable
 data class ClassDataResponse(@SerialName("courseReferenceNumber") val crn: String,
                              val meetingsFaculty: List<MeetingFacultyResponse>,

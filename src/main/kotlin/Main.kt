@@ -1,66 +1,29 @@
+import javafx.application.Application
+import javafx.application.Application.launch
+import javafx.application.Platform
+import javafx.scene.Scene
+import javafx.scene.control.ScrollPane
+import javafx.scene.layout.VBox
+import javafx.stage.Stage
 import kotlinx.coroutines.*
 import kotlinx.coroutines.javafx.JavaFx
-import java.time.LocalDate
+import kotlin.system.exitProcess
 
 val coroutineScope = CoroutineScope(Dispatchers.Default)
 val fxScope = CoroutineScope(Dispatchers.JavaFx)
 
-fun LocalDate.withScheduleWeekday(day: Int): LocalDate {
-    return this.plusDays((day + 1).mod(7).toLong() - this.dayOfWeek.value)
+abstract class Page {
+    val mainVBox = VBox()
+    val root = ScrollPane(mainVBox)
+
+    var onDone = {  }
 }
 
 // TODO: Add calendar name checking for the filename or maybe convert
 //  the filename to something valid with regex or something
 // TODO: Use apply more
-/*class App : Application() {
+class App : Application() {
     private lateinit var scene: Scene
-
-    private val loadRoot = VBox()
-
-    private val loadText = Text()
-
-    init {
-        loadRoot.children.add(loadText)
-    }
-
-    private fun transitionToCalendar(argument: ScheduleGenArgument) {
-        fxScope.launch {
-            val text = AtomicReference<String>()
-            loadText.text = text.get()
-
-            // This stops the callback from spamming invoke later
-            val textUpdater = fxScope.launch {
-                while (true) {
-                    delay(100)
-                    loadText.text = text.get()
-                }
-            }
-
-            scene.root = loadRoot
-
-            val schedules = coroutineScope.async {
-                genSchedule(argument.classGroups.map { Pair(it, 0.1) },
-                    argument.term,
-                    1500000,
-                    genGradeFun(
-                        argument.gradeFunGeneratorArguments.groupWeights,
-                        argument.gradeFunGeneratorArguments.breaksAndWeights,
-                        argument.gradeFunGeneratorArguments.creditWeight,
-                        15.minutes,
-                        argument.gradeFunGeneratorArguments.backToBackWeight,
-                        argument.gradeFunGeneratorArguments.creditLimit,
-                        argument.gradeFunGeneratorArguments.creditLimitWeight
-                    )) { description, completion ->
-                    text.set(String.format("%s: %.2f%%", description, completion * 100))
-                }
-            }.await()
-
-            textUpdater.cancelAndJoin()
-
-            CalendarSceneManager.loadSchedules(schedules)
-            scene.root = CalendarSceneManager.root
-        }
-    }
 
     override fun start(stage: Stage) {
         stage.title = "Calendar"
@@ -72,38 +35,15 @@ fun LocalDate.withScheduleWeekday(day: Int): LocalDate {
             exitProcess(0)
         }
 
-        ArgumentSceneManager.doneButton.onAction = EventHandler {
-            transitionToCalendar(ArgumentSceneManager.getArgument())
-        }
+        val termSelector = TermSelectPage()
+        termSelector.onDone = { scene.root = ArgumentPage(termSelector.getTerm()).root }
 
-        CalendarSceneManager.backButton.onAction = EventHandler {
-            scene.root = ArgumentSceneManager.root
-        }
-
-        scene = Scene(ArgumentSceneManager.root)
+        scene = Scene(termSelector.root)
         scene.stylesheets.add("entry.css")
         stage.scene = scene
 
         stage.show()
     }
-}*/
-
-suspend fun main() {
-    // launch(App::class.java)
-
-    val options = searchOptions[3]
-    println(options.term)
-
-    val classGroupResponsesDeferred = mutableListOf<Deferred<List<ClassDataResponse>>>()
-    for (i in 0..<3) {
-        classGroupResponsesDeferred.add(coroutineScope.async { getSearch(Search(subject = options.subjects.random().code, term = options.term.code)) })
-    }
-
-    val classGroupsDeferred = classGroupResponsesDeferred.map { classGroupResponseDeferred ->
-        classGroupResponseDeferred.await().map { coroutineScope.async { convertResponse(it) } }
-    }
-
-    runBlocking {
-        println(genSchedules(classGroupsDeferred.map { it.awaitAll() }, 1000, 0.2))
-    }
 }
+
+fun main() = launch(App::class.java)

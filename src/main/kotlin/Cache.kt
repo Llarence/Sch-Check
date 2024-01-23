@@ -39,6 +39,7 @@ object SerializableInstantSerializer : KSerializer<SerializableInstant> {
 // Maybe should move the cache out of ram
 // MaxSize is only an estimate
 // TODO: Improve the saving to not redo the whole thing everytime
+// TODO: Maybe use serializers like in Saver to make it not only strings
 @OptIn(ExperimentalSerializationApi::class)
 class RequestResponseCache(private val file: File,
                            private val retainDuration: TemporalAmount,
