@@ -41,7 +41,8 @@ data class MeetingFacultyResponse(val meetingTime: MeetingTimeResponse)
 // TODO: Figure out what multiple meetingsFaculties would mean
 //  selecting term and hitting search shows some with multiple meetingsFaculties
 @Serializable
-data class ClassDataResponse(@SerialName("courseReferenceNumber") val crn: String,
+data class ClassDataResponse(val courseReferenceNumber: String,
+                             val courseTitle: String,
                              val meetingsFaculty: List<MeetingFacultyResponse>,
                              val term: String)
 

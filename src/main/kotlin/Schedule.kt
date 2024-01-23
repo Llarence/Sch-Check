@@ -6,7 +6,7 @@ import kotlin.random.Random
 data class MeetTime(val start: DayTime, val end: DayTime, val day: DayOfWeek) {
     fun intersects(other: MeetTime): Boolean {
         if (day == other.day) {
-            if (start.inMinutes >= other.end.inMinutes || other.end.inMinutes >= start.inMinutes) {
+            if (start.inMinutes > other.end.inMinutes || other.end.inMinutes > start.inMinutes) {
                 return false
             }
         }
@@ -17,7 +17,7 @@ data class MeetTime(val start: DayTime, val end: DayTime, val day: DayOfWeek) {
 
 // If links is null it is unknown
 @Serializable
-data class ClassData(val crn: String, val meetTimes: List<MeetTime>, val links: List<ClassData>?)
+data class ClassData(val crn: String, val title: String, val meetTimes: List<MeetTime>, val links: List<ClassData>?)
 
 suspend fun convertResponse(classDataResponse: ClassDataResponse, link: Boolean = false): ClassData {
     val meetTimes = mutableListOf<MeetTime>()
@@ -63,17 +63,20 @@ suspend fun convertResponse(classDataResponse: ClassDataResponse, link: Boolean 
     }
 
     return if (link) {
-        ClassData(classDataResponse.crn, meetTimes, null)
+        ClassData(classDataResponse.courseReferenceNumber,
+            classDataResponse.courseTitle,
+            meetTimes,
+            null)
     } else {
-        val linksResponse = getLinks(classDataResponse.crn, classDataResponse.term)
-        ClassData(classDataResponse.crn,
+        val linksResponse = getLinks(classDataResponse.courseReferenceNumber, classDataResponse.term)
+        ClassData(classDataResponse.courseReferenceNumber,
+            classDataResponse.courseTitle,
             meetTimes,
             // I don't know why there is an outer list it seems to only have one element
             linksResponse.linkedData.flatMap { linkedData -> linkedData.map { convertResponse(it, true) } })
     }
 }
 
-// TODO: Stop classes overlapping (in a test two classes that had the same crn overlapped)
 fun genSchedules(classGroups: List<List<ClassData>>, tries: Int, skipChance: Double): List<List<ClassData>> {
     val schedules = mutableListOf<List<ClassData>>()
     for (i in 0..<tries) {
@@ -98,8 +101,10 @@ fun genSchedules(classGroups: List<List<ClassData>>, tries: Int, skipChance: Dou
             }
         }
 
-        println(schedule + links)
-        schedules.add((schedule + links).toList())
+        val fullSchedule = schedule + links
+        if (fullSchedule.isNotEmpty()) {
+            schedules.add(fullSchedule.toList())
+        }
     }
 
     return schedules

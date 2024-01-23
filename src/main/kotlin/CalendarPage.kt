@@ -4,11 +4,9 @@ import com.calendarfx.model.Entry
 import com.calendarfx.model.Interval
 import com.calendarfx.view.CalendarView
 import javafx.event.EventHandler
-import javafx.scene.control.Alert
+import javafx.geometry.Pos
+import javafx.scene.control.*
 import javafx.scene.control.Alert.AlertType
-import javafx.scene.control.Button
-import javafx.scene.control.ButtonType
-import javafx.scene.control.Label
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import kotlinx.coroutines.delay
@@ -18,6 +16,7 @@ import java.io.File
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
+import kotlin.math.min
 
 private val calendarSaver = Saver.create<List<ClassData>>(File("saves/calendars/"))
 
@@ -40,6 +39,9 @@ class CalendarPage : Page() {
     private var currSchedule: List<ClassData>? = null
 
     init {
+        val backButton = Button("Back")
+        backButton.onAction = EventHandler { onBack() }
+
         val prevButton = Button("Previous")
         prevButton.onAction = EventHandler { shiftSchedule(-1) }
 
@@ -78,7 +80,7 @@ class CalendarPage : Page() {
             }
         }
 
-        val headerHBox = HBox(prevButton, nextButton, nameField, saveButton, loadButton)
+        val headerHBox = HBox(backButton, prevButton, nextButton, nameField, saveButton, loadButton)
 
         calendar = Calendar<Nothing>("")
 
@@ -135,6 +137,7 @@ class CalendarPage : Page() {
         calendar.clear()
         val now = LocalDate.now()
         for (classDatum in schedule) {
+            // TODO: Somehow show classes with meetTimes
             for (meetTime in classDatum.meetTimes) {
                 val date = now.withScheduleWeekday(meetTime.day)
 
@@ -144,7 +147,7 @@ class CalendarPage : Page() {
                 )
 
                 // TODO: Make the entry un-modifiable
-                val entry = Entry<Nothing>("CRN: ${classDatum.crn}", interval)
+                val entry = Entry<Nothing>("CRN: ${classDatum.crn}, Title: ${classDatum.title}", interval)
                 entry.recurrenceRule = "RRULE:FREQ=WEEKLY"
                 entry.styleClass.clear()
                 entry.styleClass.add("entry")
@@ -152,5 +155,42 @@ class CalendarPage : Page() {
                 calendar.addEntry(entry)
             }
         }
+    }
+}
+
+// TODO: Check this for a memory leak
+class LoadingPage : Page() {
+    override val root = Label()
+
+    private var dots = 0
+
+    init {
+        root.alignment = Pos.CENTER
+        root.text = "Loading"
+
+        var dotDecay = 0.0
+        // This may cause a memory leak (maybe)
+        fxScope.launch {
+            while (true) {
+                delay(100)
+
+                dotDecay += dots * 0.2
+                dotDecay = min(dotDecay, dots.toDouble())
+
+                val currDecay = dotDecay.toInt()
+                if (currDecay != 0) {
+                    setDots(dots - currDecay)
+                }
+            }
+        }
+    }
+
+    private fun setDots(newDots: Int) {
+        dots = newDots
+        root.text = "Loading${".".repeat(dots)}"
+    }
+
+    fun stepDots() {
+        setDots(dots + 1)
     }
 }

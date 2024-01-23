@@ -209,6 +209,9 @@ class ArgumentPage(private val term: Option) : Page() {
     override val root = ScrollPane()
 
     init {
+        val backButton = Button("Back")
+        backButton.onAction = EventHandler { onBack() }
+
         val nameField = CustomTextField()
         nameField.right = Label("Name")
 
@@ -238,9 +241,9 @@ class ArgumentPage(private val term: Option) : Page() {
         }
 
         val nextButton = Button("Next")
-        nextButton.onAction = EventHandler { onDone() }
+        nextButton.onAction = EventHandler { onNext() }
 
-        val headerHBox = HBox(nameField, saveButton, loadButton, nextButton)
+        val headerHBox = HBox(backButton, nameField, saveButton, loadButton, nextButton)
 
         val tab = genClassGroupTab()
 
@@ -312,7 +315,7 @@ class TermSelectPage : Page() {
     init {
         val next = Button("Next!")
         next.isDisable = true
-        next.onAction = EventHandler { onDone() }
+        next.onAction = EventHandler { onNext() }
 
         termSelect.selectionModel.select(0)
         termSelect.items.addAll(searchOptions.keys)
