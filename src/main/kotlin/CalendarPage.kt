@@ -15,29 +15,31 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.controlsfx.control.textfield.CustomTextField
 import java.io.File
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 
-/*private val calendarSaver = Saver.create<Schedule>(File("saves/calendars/"))
+private val calendarSaver = Saver.create<List<ClassData>>(File("saves/calendars/"))
 
-object CalendarSceneManager {
-    val root = VBox()
+fun LocalDate.withScheduleWeekday(day: DayOfWeek): LocalDate {
+    return this.plusDays((day.value - this.dayOfWeek.value).toLong())
+}
 
-    val backButton = Button("Back")
+class CalendarPage : Page() {
+    private val nameField = CustomTextField()
+
+    override val root = VBox()
 
     private val calendar: Calendar<Nothing>
-    private val nameField = CustomTextField()
 
     private var calendarNameFormat = ""
 
-    private lateinit var schedules: List<Schedule>
+    private lateinit var schedules: List<List<ClassData>>
     private var scheduleIndex = 0
 
-    private var currSchedule: Schedule? = null
+    private var currSchedule: List<ClassData>? = null
 
     init {
-        val headerHBox = HBox()
-
         val prevButton = Button("Previous")
         prevButton.onAction = EventHandler { shiftSchedule(-1) }
 
@@ -49,6 +51,7 @@ object CalendarSceneManager {
             setCalendarName(new)
         }
 
+        // Hate to copy code from ArgumentPage
         val saveButton = Button("Save")
         saveButton.onAction = EventHandler {
             if (currSchedule != null) {
@@ -61,28 +64,33 @@ object CalendarSceneManager {
             }
         }
 
+        // Hate to copy code from ArgumentPage
         val loadButton = Button("Load")
         loadButton.onAction = EventHandler {
             val schedule = calendarSaver.load(nameField.text)
             if (schedule != null) {
-                setCalendar(nameField.text, schedule)
+                val alert = Alert(AlertType.CONFIRMATION, "", ButtonType.YES, ButtonType.NO)
+                alert.showAndWait()
+
+                if (alert.result == ButtonType.YES) {
+                    setCalendar(nameField.text, schedule)
+                }
             }
         }
 
-        headerHBox.children.addAll(backButton, prevButton, nextButton, nameField, saveButton, loadButton)
+        val headerHBox = HBox(prevButton, nextButton, nameField, saveButton, loadButton)
+
+        calendar = Calendar<Nothing>("")
+
+        val source = CalendarSource("Schedule")
+        source.calendars.add(calendar)
 
         val calendarView = CalendarView()
+        calendarView.calendarSources.add(source)
+
         root.heightProperty().addListener { _, _, new ->
             calendarView.prefHeight = new.toDouble()
         }
-
-        val source = CalendarSource("Schedule")
-
-        calendar = Calendar<Nothing>("")
-        source.calendars.add(calendar)
-
-        calendarView.calendarSources.add(source)
-
         root.children.addAll(headerHBox, calendarView)
 
         fxScope.launch {
@@ -94,7 +102,7 @@ object CalendarSceneManager {
         }
     }
 
-    fun loadSchedules(schedules: List<Schedule>) {
+    fun loadSchedules(schedules: List<List<ClassData>>) {
         this.schedules = schedules
 
         scheduleIndex = 0
@@ -118,28 +126,25 @@ object CalendarSceneManager {
         setCalendar(scheduleIndex.toString(), schedules[scheduleIndex])
     }
 
-    private fun setCalendar(name: String, schedule: Schedule) {
+    private fun setCalendar(name: String, schedule: List<ClassData>) {
         currSchedule = schedule
 
-        calendarNameFormat = "Name: %s\nCredits: ${schedule.classData.sumOf { it.second.credits }}\nGrade: ${schedule.grade}"
+        calendarNameFormat = "Name: %s"
         setCalendarName(name)
 
         calendar.clear()
         val now = LocalDate.now()
-        for (classDatum in schedule.classData) {
-            for (meetTime in classDatum.first.meetingTimes) {
-                val date = now.withScheduleWeekday(meetTime.meetDay)
-
-                val startHours = meetTime.startTime.inWholeHours.toInt()
-                val endHours = meetTime.endTime.inWholeHours.toInt()
+        for (classDatum in schedule) {
+            for (meetTime in classDatum.meetTimes) {
+                val date = now.withScheduleWeekday(meetTime.day)
 
                 val interval = Interval(
-                    date.atTime(startHours, meetTime.startTime.inWholeMinutes.toInt() - (startHours * 60)),
-                    date.atTime(endHours, meetTime.endTime.inWholeMinutes.toInt() - (endHours * 60))
+                    date.atTime(meetTime.start.hour, meetTime.start.minute),
+                    date.atTime(meetTime.end.hour, meetTime.end.minute)
                 )
 
                 // TODO: Make the entry un-modifiable
-                val entry = Entry<Nothing>("Title: ${classDatum.first.title}, Seats: ${classDatum.second.seatsAvailable}, CRN: ${classDatum.first.crn}", interval)
+                val entry = Entry<Nothing>("CRN: ${classDatum.crn}", interval)
                 entry.recurrenceRule = "RRULE:FREQ=WEEKLY"
                 entry.styleClass.clear()
                 entry.styleClass.add("entry")
@@ -148,4 +153,4 @@ object CalendarSceneManager {
             }
         }
     }
-}*/
+}

@@ -5,6 +5,7 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import javafx.util.StringConverter
 import kotlinx.serialization.Serializable
+import org.controlsfx.control.textfield.CustomTextField
 import java.io.File
 import java.time.DayOfWeek
 
@@ -205,26 +206,53 @@ fun addAddTab(tabPane: TabPane, tabGen: () -> Tab) {
 class ArgumentPage(private val term: Option) : Page() {
     private val tabPane = TabPane()
 
+    override val root = ScrollPane()
+
     init {
-        val saveLoadPanel =  SaveLoadPanel()
-        saveLoadPanel.onSave = { argumentSaver.save(it, getArgument()) }
-        saveLoadPanel.onLoad = {
-            val argument = argumentSaver.load(it)
-            if (argument != null) {
-                setArgument(argument)
+        val nameField = CustomTextField()
+        nameField.right = Label("Name")
+
+        // Hate to copy code from CalendarPage
+        val saveButton = Button("Save")
+        saveButton.onAction = EventHandler {
+            val alert = Alert(Alert.AlertType.CONFIRMATION, "", ButtonType.YES, ButtonType.NO)
+            alert.showAndWait()
+
+            if (alert.result == ButtonType.YES) {
+                argumentSaver.save(nameField.text, getArgument())
             }
         }
+
+        // Hate to copy code from CalendarPage
+        val loadButton = Button("Load")
+        loadButton.onAction = EventHandler {
+            val argument = argumentSaver.load(nameField.text)
+            if (argument != null) {
+                val alert = Alert(Alert.AlertType.CONFIRMATION, "", ButtonType.YES, ButtonType.NO)
+                alert.showAndWait()
+
+                if (alert.result == ButtonType.YES) {
+                    setArgument(argument)
+                }
+            }
+        }
+
+        val nextButton = Button("Next")
+        nextButton.onAction = EventHandler { onDone() }
+
+        val headerHBox = HBox(nameField, saveButton, loadButton, nextButton)
 
         val tab = genClassGroupTab()
 
         tabPane.tabs.add(tab)
         addAddTab(tabPane, ::genClassGroupTab)
 
-        mainVBox.children.addAll(saveLoadPanel, tabPane)
+        val mainVBox = VBox(headerHBox, tabPane)
+        root.content = mainVBox
     }
 
     // Hate all the casting
-    private fun getArgument(): ScheduleGenArguments {
+    fun getArgument(): ScheduleGenArguments {
         val classGroupsSearches = mutableListOf<List<Search>>()
         for (i in 0..<tabPane.tabs.size - 1) {
             val classGroupSearches = mutableListOf<Search>()
@@ -279,6 +307,8 @@ class ArgumentPage(private val term: Option) : Page() {
 class TermSelectPage : Page() {
     private val termSelect = ComboBox<Option>()
 
+    override val root = VBox()
+
     init {
         val next = Button("Next!")
         next.isDisable = true
@@ -289,7 +319,7 @@ class TermSelectPage : Page() {
         termSelect.converter = optionStringConverter
         termSelect.selectionModel.selectedItemProperty().addListener { _ -> next.isDisable = false }
 
-        mainVBox.children.addAll(termSelect, next)
+        root.children.addAll(termSelect, next)
     }
 
     fun getTerm(): Option {

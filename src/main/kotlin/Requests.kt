@@ -45,7 +45,7 @@ private val cache = RequestResponseCache(
         Duration.ofDays(30),
         1024L * 1024L * 1024L)
 
-val requestSemaphore = Semaphore(5)
+val requestSemaphore = Semaphore(20)
 
 fun setTerm(term: String) {
     // This will "make the cookies work"

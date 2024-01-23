@@ -1,6 +1,8 @@
+import kotlinx.serialization.Serializable
 import java.time.DayOfWeek
 import kotlin.random.Random
 
+@Serializable
 data class MeetTime(val start: DayTime, val end: DayTime, val day: DayOfWeek) {
     fun intersects(other: MeetTime): Boolean {
         if (day == other.day) {
@@ -14,6 +16,7 @@ data class MeetTime(val start: DayTime, val end: DayTime, val day: DayOfWeek) {
 }
 
 // If links is null it is unknown
+@Serializable
 data class ClassData(val crn: String, val meetTimes: List<MeetTime>, val links: List<ClassData>?)
 
 suspend fun convertResponse(classDataResponse: ClassDataResponse, link: Boolean = false): ClassData {
@@ -70,14 +73,15 @@ suspend fun convertResponse(classDataResponse: ClassDataResponse, link: Boolean 
     }
 }
 
-fun genSchedules(classGroups: List<List<ClassData>>, tries: Int, skipChance: Double): Set<Set<ClassData>> {
-    val schedules = mutableSetOf<Set<ClassData>>()
+// TODO: Stop classes overlapping (in a test two classes that had the same crn overlapped)
+fun genSchedules(classGroups: List<List<ClassData>>, tries: Int, skipChance: Double): List<List<ClassData>> {
+    val schedules = mutableListOf<List<ClassData>>()
     for (i in 0..<tries) {
         val scheduleMeetTimes = mutableListOf<MeetTime>()
         val schedule = mutableSetOf<ClassData>()
 
         for (classGroup in classGroups.shuffled()) {
-            if (Random.nextDouble() < skipChance) {
+            if (Random.nextDouble() > skipChance) {
                 val classData = classGroup.random()
 
                 if (!scheduleMeetTimes.any { meetTime -> classData.meetTimes.any { meetTime.intersects(it) } }) {
@@ -94,7 +98,8 @@ fun genSchedules(classGroups: List<List<ClassData>>, tries: Int, skipChance: Dou
             }
         }
 
-        schedules.add(schedule + links)
+        println(schedule + links)
+        schedules.add((schedule + links).toList())
     }
 
     return schedules

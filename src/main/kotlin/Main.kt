@@ -1,20 +1,17 @@
 import javafx.application.Application
 import javafx.application.Application.launch
 import javafx.application.Platform
+import javafx.scene.Parent
 import javafx.scene.Scene
-import javafx.scene.control.ScrollPane
-import javafx.scene.layout.VBox
 import javafx.stage.Stage
 import kotlinx.coroutines.*
 import kotlinx.coroutines.javafx.JavaFx
 import kotlin.system.exitProcess
 
-val coroutineScope = CoroutineScope(Dispatchers.Default)
 val fxScope = CoroutineScope(Dispatchers.JavaFx)
 
 abstract class Page {
-    val mainVBox = VBox()
-    val root = ScrollPane(mainVBox)
+    abstract val root: Parent
 
     var onDone = {  }
 }
@@ -35,8 +32,32 @@ class App : Application() {
             exitProcess(0)
         }
 
+        val scheduleViewer = CalendarPage()
+
         val termSelector = TermSelectPage()
-        termSelector.onDone = { scene.root = ArgumentPage(termSelector.getTerm()).root }
+        termSelector.onDone = {
+            val argumentSelector = ArgumentPage(termSelector.getTerm())
+            argumentSelector.onDone = {
+                scheduleViewer.loadSchedules(listOf())
+                scene.root = scheduleViewer.root
+
+                fxScope.launch {
+                    val argument = argumentSelector.getArgument()
+
+                    val classGroupsDeferred = argument.classGroupsSearches.map { searches ->
+                        searches.map { search -> async {
+                            getSearch(search).map { async { convertResponse(it) } } }
+                        }
+                    }
+                    scheduleViewer.loadSchedules(genSchedules(
+                        classGroupsDeferred.map { deferreds -> deferreds.flatMap { deferred -> deferred.await().map { it.await() } } },
+                        argument.tries,
+                        argument.skipChance))
+                }
+            }
+
+            scene.root = argumentSelector.root
+        }
 
         scene = Scene(termSelector.root)
         scene.stylesheets.add("entry.css")
