@@ -6,12 +6,10 @@ import kotlin.random.Random
 data class MeetTime(val start: DayTime, val end: DayTime, val day: DayOfWeek) {
     fun intersects(other: MeetTime): Boolean {
         if (day == other.day) {
-            if (start.inMinutes > other.end.inMinutes || other.end.inMinutes > start.inMinutes) {
-                return false
-            }
+            return !(end.inMinutes < other.start.inMinutes || other.end.inMinutes < start.inMinutes)
         }
 
-        return true
+        return false
     }
 }
 
@@ -19,6 +17,7 @@ data class MeetTime(val start: DayTime, val end: DayTime, val day: DayOfWeek) {
 @Serializable
 data class ClassData(val crn: String, val title: String, val meetTimes: List<MeetTime>, val links: List<ClassData>?)
 
+// TODO: Check 56169
 suspend fun convertResponse(classDataResponse: ClassDataResponse, link: Boolean = false): ClassData {
     val meetTimes = mutableListOf<MeetTime>()
 
@@ -62,16 +61,17 @@ suspend fun convertResponse(classDataResponse: ClassDataResponse, link: Boolean 
         }
     }
 
+    // TODO: Sometimes there can be identical copies of a MeetTime such as with 56169 Spring Term 2024
     return if (link) {
         ClassData(classDataResponse.courseReferenceNumber,
             classDataResponse.courseTitle,
-            meetTimes,
+            meetTimes.distinct(),
             null)
     } else {
         val linksResponse = getLinks(classDataResponse.courseReferenceNumber, classDataResponse.term)
         ClassData(classDataResponse.courseReferenceNumber,
             classDataResponse.courseTitle,
-            meetTimes,
+            meetTimes.distinct(),
             // I don't know why there is an outer list it seems to only have one element
             linksResponse.linkedData.flatMap { linkedData -> linkedData.map { convertResponse(it, true) } })
     }
@@ -84,7 +84,7 @@ fun genSchedules(classGroups: List<List<ClassData>>, tries: Int, skipChance: Dou
         val schedule = mutableSetOf<ClassData>()
 
         for (classGroup in classGroups.shuffled()) {
-            if (Random.nextDouble() > skipChance) {
+            if (classGroup.isNotEmpty() && Random.nextDouble() > skipChance) {
                 val classData = classGroup.random()
 
                 if (!scheduleMeetTimes.any { meetTime -> classData.meetTimes.any { meetTime.intersects(it) } }) {
@@ -94,18 +94,40 @@ fun genSchedules(classGroups: List<List<ClassData>>, tries: Int, skipChance: Dou
             }
         }
 
-        val links = mutableSetOf<ClassData>()
-        for (classData in schedule) {
-            if (classData.links!!.isNotEmpty()) {
-                links.add(classData.links.random())
-            }
+        if (!addLinks(schedule, scheduleMeetTimes)) {
+            continue
         }
 
-        val fullSchedule = schedule + links
-        if (fullSchedule.isNotEmpty()) {
-            schedules.add(fullSchedule.toList())
+        if (schedule.isNotEmpty()) {
+            schedules.add(schedule.toList())
         }
     }
 
     return schedules
+}
+
+fun addLinks(schedule: MutableSet<ClassData>, scheduleMeetTimes: MutableList<MeetTime>): Boolean {
+    val links = mutableSetOf<ClassData>()
+    // Unclear if the shuffled is necessary
+    for (classData in schedule.shuffled()) {
+        if (classData.links!!.isNotEmpty()) {
+            var found = false
+            for (linkData in classData.links.shuffled()) {
+                if (!scheduleMeetTimes.any { meetTime -> linkData.meetTimes.any { meetTime.intersects(it) } }) {
+                    scheduleMeetTimes.addAll(linkData.meetTimes)
+                    links.add(linkData)
+
+                    found = true
+                    break
+                }
+            }
+
+            if (!found) {
+                return false
+            }
+        }
+    }
+
+    schedule.addAll(links)
+    return true
 }

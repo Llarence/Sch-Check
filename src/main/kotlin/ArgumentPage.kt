@@ -4,10 +4,32 @@ import javafx.scene.control.*
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import javafx.util.StringConverter
+import javafx.util.converter.IntegerStringConverter
 import kotlinx.serialization.Serializable
 import org.controlsfx.control.textfield.CustomTextField
 import java.io.File
+import java.text.NumberFormat
+import java.text.ParsePosition
 import java.time.DayOfWeek
+
+val numberFormat: NumberFormat = NumberFormat.getNumberInstance()
+
+fun createIntFormatter(): TextFormatter<Int> {
+    return TextFormatter(
+        IntegerStringConverter(), 0
+    ) {
+        if (it.isContentChange) {
+            val parsePosition = ParsePosition(0)
+            numberFormat.parse(it.controlNewText, parsePosition)
+
+            if (parsePosition.index == 0 || parsePosition.index < it.controlNewText.length) {
+                return@TextFormatter null
+            }
+        }
+
+        it
+    }
+}
 
 @Serializable
 data class ScheduleGenArguments(val classGroupsSearches: List<List<Search>>, val tries: Int, val skipChance: Double)
@@ -24,8 +46,8 @@ private val optionStringConverter = object : StringConverter<Option>() {
 }
 
 class DayTimePicker : VBox() {
-    private val hour = Spinner<Int>(0, 23, 0)
-    private val minute = Spinner<Int>(0, 59, 0)
+    private val hour = Spinner<Int>(0, 23, 0).apply { isEditable = true }
+    private val minute = Spinner<Int>(0, 59, 0).apply { isEditable = true }
 
     init {
         children.addAll(Label("Hour", hour), Label("Minute", minute))
@@ -38,7 +60,7 @@ class DayTimePicker : VBox() {
 
 class SearchPane(private val term: Option, default: Search = Search(term = term.code)) : VBox() {
     private val subject = ComboBox<Option>()
-    private val courseNumber = Spinner<Int>(0, Int.MAX_VALUE, Int.MIN_VALUE)
+    private val courseNumber = Spinner<Int>(0, Int.MAX_VALUE, Int.MIN_VALUE).apply { isEditable = true; editor.textFormatter = createIntFormatter() }
     private val keyword = TextField()
     private val keywordAll = TextField()
     private val keywordAny = TextField()
@@ -51,11 +73,11 @@ class SearchPane(private val term: Option, default: Search = Search(term = term.
     private val college = ComboBox<Option>()
     private val department = ComboBox<Option>()
     private val scheduleType = ComboBox<Option>()
-    private val durationValue = Spinner<Double>()
+    private val durationValue = Spinner<Double>().apply { isEditable = true }
     private val durationType = ComboBox<Option>()
     private val partOfTerm = ComboBox<Option>()
-    private val courseNumberRangeLow = Spinner<Int>(0, Int.MAX_VALUE, Int.MIN_VALUE)
-    private val courseNumberRangeHigh = Spinner<Int>(0, Int.MAX_VALUE, Int.MIN_VALUE)
+    private val courseNumberRangeLow = Spinner<Int>(0, Int.MAX_VALUE, Int.MIN_VALUE).apply { isEditable = true; editor.textFormatter = createIntFormatter() }
+    private val courseNumberRangeHigh = Spinner<Int>(0, Int.MAX_VALUE, Int.MIN_VALUE).apply { isEditable = true; editor.textFormatter = createIntFormatter() }
     private val monday = CheckBox("Monday")
     private val tuesday = CheckBox("Tuesday")
     private val wednesday = CheckBox("Wednesday")
