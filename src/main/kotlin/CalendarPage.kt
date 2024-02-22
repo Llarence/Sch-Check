@@ -108,10 +108,7 @@ class CalendarPage : Page() {
         this.schedules = schedules
 
         scheduleIndex = 0
-        val first = schedules.firstOrNull()
-        if (first != null) {
-            setCalendar(scheduleIndex.toString(), first)
-        }
+        setCalendar("0", schedules.firstOrNull())
     }
 
     private fun setCalendarName(name: String) {
@@ -128,13 +125,18 @@ class CalendarPage : Page() {
         setCalendar(scheduleIndex.toString(), schedules[scheduleIndex])
     }
 
-    private fun setCalendar(name: String, schedule: List<ClassData>) {
+    private fun setCalendar(name: String, schedule: List<ClassData>?) {
         currSchedule = schedule
 
         calendarNameFormat = "Name: %s"
         setCalendarName(name)
 
         calendar.clear()
+
+        if (schedule == null) {
+            return
+        }
+
         val now = LocalDate.now()
         for (classDatum in schedule) {
             // TODO: Somehow show classes with meetTimes

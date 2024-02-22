@@ -86,7 +86,7 @@ class App : Application() {
             scheduleViewer.loadSchedules(genSchedules(
                 classGroups,
                 argument.tries,
-                argument.skipChance))
+                argument.skipChance).sortedBy(::valueSchedule))
 
             scene.root = scheduleViewer.root
         }

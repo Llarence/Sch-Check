@@ -58,7 +58,7 @@ data class DayTime(val hour: Int, val minute: Int) {
 // Some things could be enums, but there would be too many values (and they may change)
 @Serializable
 data class Search(val subject: String? = null,
-                  val courseNumber: Int? = null,
+                  val courseNumber: String? = null,
                   val keyword: String? = null,
                   val keywordAll: String? = null,
                   val keywordAny: String? = null,

@@ -17,7 +17,6 @@ data class MeetTime(val start: DayTime, val end: DayTime, val day: DayOfWeek) {
 @Serializable
 data class ClassData(val crn: String, val title: String, val meetTimes: List<MeetTime>, val links: List<ClassData>?)
 
-// TODO: Check 56169
 suspend fun convertResponse(classDataResponse: ClassDataResponse, link: Boolean = false): ClassData {
     val meetTimes = mutableListOf<MeetTime>()
 
@@ -130,4 +129,8 @@ fun addLinks(schedule: MutableSet<ClassData>, scheduleMeetTimes: MutableList<Mee
 
     schedule.addAll(links)
     return true
+}
+
+fun valueSchedule(schedule: List<ClassData>): Double {
+    return -schedule.size.toDouble()
 }

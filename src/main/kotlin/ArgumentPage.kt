@@ -60,7 +60,7 @@ class DayTimePicker : VBox() {
 
 class SearchPane(private val term: Option, default: Search = Search(term = term.code)) : VBox() {
     private val subject = ComboBox<Option>()
-    private val courseNumber = Spinner<Int>(0, Int.MAX_VALUE, Int.MIN_VALUE).apply { isEditable = true; editor.textFormatter = createIntFormatter() }
+    private val courseNumber = TextField()
     private val keyword = TextField()
     private val keywordAll = TextField()
     private val keywordAny = TextField()
@@ -92,7 +92,7 @@ class SearchPane(private val term: Option, default: Search = Search(term = term.
     init {
         val searchOptions = searchOptions[term]!!
 
-        if (default.courseNumber != null) { courseNumber.valueFactory.value = default.courseNumber }
+        if (default.courseNumber != null) { courseNumber.text = default.courseNumber }
         if (default.keyword != null) { keyword.text = default.keyword }
         if (default.keywordAll != null) { keywordAll.text = default.keywordAll }
         if (default.keywordAny != null) { keywordAny.text = default.keywordAny }
@@ -184,7 +184,7 @@ class SearchPane(private val term: Option, default: Search = Search(term = term.
 
         return Search(
             subject = if (subject.isDisabled) { null } else { subject.value.code },
-            courseNumber = if (courseNumber.isDisabled) { null } else { courseNumber.value },
+            courseNumber = if (courseNumber.isDisabled) { null } else { courseNumber.text },
             keyword = if (keyword.isDisabled) { null } else { keyword.text },
             keywordAll = if (keywordAll.isDisabled) { null } else { keywordAll.text },
             keywordAny = if (keywordAny.isDisabled) { null } else { keywordAny.text },
@@ -290,7 +290,7 @@ class ArgumentPage(private val term: Option) : Page() {
             classGroupsSearches.add(classGroupSearches)
         }
 
-        return ScheduleGenArguments(classGroupsSearches, 1000, 0.2)
+        return ScheduleGenArguments(classGroupsSearches, 10000, 0.2)
     }
 
     // Hate all the casting
