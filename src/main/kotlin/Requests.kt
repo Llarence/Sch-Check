@@ -1,5 +1,4 @@
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import okhttp3.*
 import java.io.File
 import java.time.Duration
@@ -14,31 +13,65 @@ data class Query(val code: String, val value: String) {
     }
 }
 
-private val cookieJar = object : CookieJar {
-    val cookies = mutableListOf<Cookie>()
+class TermedClient(val term: String?) {
+    private val client: OkHttpClient
 
-    override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
-        this.cookies.addAll(cookies)
+    @Volatile
+    private var inited = term == null
+    private val initLock = Semaphore(1)
+
+    init {
+        val cookieJar = object : CookieJar {
+            val cookies = mutableListOf<Cookie>()
+
+            override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
+                this.cookies.addAll(cookies)
+            }
+
+            override fun loadForRequest(url: HttpUrl): List<Cookie> {
+                return cookies
+            }
+        }
+
+        client = OkHttpClient.Builder().cookieJar(cookieJar).build()
     }
 
-    override fun loadForRequest(url: HttpUrl): List<Cookie> {
-        return cookies
+    private fun tryInitTerm() {
+        if (inited) {
+            return
+        }
+
+        if (initLock.tryAcquire()) {
+            // This will "make the cookies work"
+            client.newCall(Request.Builder()
+                .url("https://prodapps.isadm.oregonstate.edu/StudentRegistrationSsb/ssb/term/search?mode=search")
+                .post(
+                    FormBody.Builder()
+                        .add("term", term!!)
+                        .add("studyPath", "")
+                        .add("studyPathText", "")
+                        .add("startDatepicker", "")
+                        .build()
+                ).build()).execute().close()
+
+            inited = true
+        } else {
+            // Waits until the other thread inits it
+            initLock.acquire()
+        }
+
+        initLock.release()
+    }
+
+    fun call(request: Request): Response {
+        tryInitTerm()
+
+        return client.newCall(request).execute()
     }
 }
-private val client = OkHttpClient.Builder().cookieJar(cookieJar).build()
 
-@Volatile
-private var currentTerm = ""
-// Term lock has each thread remove one permit if it is using term
-//  then if a thread needs to change term it acquires all the permits
-//  A thread can only acquire all the permits if it has writeTermLock
-//  The threads that want to change the term wait on termChange until
-//  the term changes where they try to acquire writeTermLock or if the term
-//  they want is on they continue. There is probably better way and
-//  there are probably bugs.
-val termSemaphore = Semaphore(Int.MAX_VALUE)
-val writeTermLock = Semaphore(1)
-val termChange = Object()
+private val termClients = mutableMapOf<String?, TermedClient>()
+private val clientsSemaphore = Semaphore(1)
 
 private val cache = RequestResponseCache(
         File("./cache.json.gz"),
@@ -46,50 +79,6 @@ private val cache = RequestResponseCache(
         1024L * 1024L * 1024L)
 
 val requestSemaphore = Semaphore(20)
-
-fun setTerm(term: String) {
-    // This will "make the cookies work"
-    client.newCall(Request.Builder()
-        .url("https://prodapps.isadm.oregonstate.edu/StudentRegistrationSsb/ssb/term/search?mode=search")
-        .post(
-            FormBody.Builder()
-                .add("term", term)
-                .add("studyPath", "")
-                .add("studyPathText", "")
-                .add("startDatepicker", "")
-                .build()
-        ).build()).execute().close()
-
-    currentTerm = term
-}
-
-// TODO: Check what synchronized does (and if it is deprecated)
-// This will acquire a permit for the thread that runs this
-fun setTermWhenPossible(term: String) {
-    while (true) {
-        if (term == currentTerm) {
-            termSemaphore.acquire()
-            if (term == currentTerm) {
-                break
-            } else {
-                termSemaphore.release()
-            }
-        }
-
-        if (writeTermLock.tryAcquire()) {
-            termSemaphore.acquire(Int.MAX_VALUE)
-            setTerm(term)
-            termSemaphore.release(Int.MAX_VALUE - 1)
-
-            writeTermLock.release()
-            synchronized(termChange) { termChange.notifyAll() }
-
-            break
-        } else {
-            synchronized(termChange) { termChange.wait() }
-        }
-    }
-}
 
 suspend fun cachedRequest(url: String, term: String? = null): String = withContext(Dispatchers.IO) {
     // Hope this doesn't cause any collisions
@@ -102,19 +91,20 @@ suspend fun cachedRequest(url: String, term: String? = null): String = withConte
 
     val request = Request.Builder().url(url).get().build()
 
-    var waited = false
-    if (term != null) {
-        termSemaphore.acquire()
+    var client = termClients[term]
+    if (client == null) {
+        clientsSemaphore.acquire()
 
-        if (term != currentTerm) {
-            waited = true
-
-            termSemaphore.release()
-            // This will acquire a termLock in the end
-            setTermWhenPossible(term)
+        client = termClients[term]
+        if (client == null) {
+            client = TermedClient(term)
+            termClients[term] = client
         }
+
+        clientsSemaphore.release()
     }
 
+    var waited = false
     if (!requestSemaphore.tryAcquire()) {
         waited = true
         requestSemaphore.acquire()
@@ -125,17 +115,18 @@ suspend fun cachedRequest(url: String, term: String? = null): String = withConte
 
         if (cacheVal2 != null) {
             requestSemaphore.release()
-            if (term != null) { termSemaphore.release() }
             return@withContext cacheVal2
         }
     }
 
-    val response = client.newCall(request).execute().body!!.string()
+    val response = client.call(request).body!!.string()
     requestSemaphore.release()
-    if (term != null) { termSemaphore.release() }
 
+    // Could it check if it is making the same request as a different cacheRequest as well
+    //  (that shouldn't happen though)
     cache.set(cacheKey, response)
 
+    println(requestSemaphore.availablePermits())
     response
 }
 

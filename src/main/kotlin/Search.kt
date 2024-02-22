@@ -12,6 +12,7 @@ val searchOptions by lazy {
     terms.associateWith { SearchOptions(it) }
 }
 
+// TODO: Make it make all the requests at once
 class SearchOptions(val term: Option) {
     val subjects by lazy { runBlocking { getOptions("subject", term.code) } }
     val attributes by lazy { runBlocking { getOptions("attribute", term.code) } }
