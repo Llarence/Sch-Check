@@ -139,7 +139,7 @@ class CalendarPage : Page() {
 
         val now = LocalDate.now()
         for (classDatum in schedule) {
-            // TODO: Somehow show classes with meetTimes
+            // TODO: Somehow show classes with no meetTimes
             for (meetTime in classDatum.meetTimes) {
                 val date = now.withScheduleWeekday(meetTime.day)
 

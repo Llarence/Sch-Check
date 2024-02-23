@@ -65,7 +65,6 @@ class TermedClient(val term: String?) {
 
     fun call(request: Request): Response {
         tryInitTerm()
-
         return client.newCall(request).execute()
     }
 }
@@ -80,7 +79,7 @@ private val cache = RequestResponseCache(
 
 val requestSemaphore = Semaphore(20)
 
-suspend fun cachedRequest(url: String, term: String? = null): String = withContext(Dispatchers.IO) {
+suspend fun cachedRequest(url: String, term: String? = null, withCleanClient: Boolean = false): String = withContext(Dispatchers.IO) {
     // Hope this doesn't cause any collisions
     val cacheKey = (term ?: "") + url
 
@@ -91,7 +90,12 @@ suspend fun cachedRequest(url: String, term: String? = null): String = withConte
 
     val request = Request.Builder().url(url).get().build()
 
-    var client = termClients[term]
+    var client = if (withCleanClient) {
+        TermedClient(term)
+    } else {
+        termClients[term]
+    }
+
     if (client == null) {
         clientsSemaphore.acquire()
 
@@ -126,7 +130,6 @@ suspend fun cachedRequest(url: String, term: String? = null): String = withConte
     //  (that shouldn't happen though)
     cache.set(cacheKey, response)
 
-    println(requestSemaphore.availablePermits())
     response
 }
 
@@ -155,7 +158,10 @@ suspend fun getSearch(search: Search): List<ClassDataResponse> {
         val response = cachedRequest(
             "https://prodapps.isadm.oregonstate.edu/StudentRegistrationSsb/ssb/searchResults/" +
                     "searchResults?$search&pageOffset=$offset&pageMaxSize=500",
-            search.term
+            search.term,
+            // Somehow the request is malformed in a way that once
+            //  it gets one it returns the same things over and over
+            true
         )
 
         val decodedResponse = json.decodeFromString<SearchResponse>(response)

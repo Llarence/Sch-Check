@@ -131,6 +131,33 @@ fun addLinks(schedule: MutableSet<ClassData>, scheduleMeetTimes: MutableList<Mee
     return true
 }
 
+fun adjacent(first: ClassData, second: ClassData, deltaMinutes: Int): Boolean {
+    for (firstMeetTime in first.meetTimes) {
+        for (secondMeetTime in second.meetTimes) {
+            if (firstMeetTime.day == secondMeetTime.day) {
+                if (firstMeetTime.start.inMinutes - secondMeetTime.end.inMinutes <= deltaMinutes ||
+                    secondMeetTime.start.inMinutes - firstMeetTime.end.inMinutes <= deltaMinutes) {
+                    return true
+                }
+            }
+        }
+    }
+
+    return false
+}
+
 fun valueSchedule(schedule: List<ClassData>): Double {
-    return -schedule.size.toDouble()
+    var value = 0.0
+
+    for (i in schedule.indices) {
+        for (j in 0..<i) {
+            if (adjacent(schedule[i], schedule[j], 15)) {
+                value += 0.01
+            }
+        }
+    }
+
+    value += schedule.size
+
+    return value
 }
