@@ -37,24 +37,38 @@ class App : Application() {
         val scheduleViewer = CalendarPage()
 
         val termSelector = TermSelectPage()
+
+        val rankingSelector = ScheduleRankingPage()
+        rankingSelector.onBack = {
+            scene.root = termSelector.root
+        }
+
         termSelector.onNext = {
-            val argumentSelector = ArgumentPage(termSelector.getTerm())
-            argumentSelector.onNext = {
-                scene.root = loading.root
+            val scheduleGenSelector = ScheduleGenPage(termSelector.getTerm())
 
-                scheduleViewer.onBack = {
-                    scene.root = argumentSelector.root
+            // Could have it start doing the requests on the transition to the rankingSelector
+            scheduleGenSelector.onNext = {
+                scene.root = rankingSelector.root
+
+                rankingSelector.onNext = {
+                    scene.root = loading.root
+
+                    scheduleViewer.onBack = {
+                        scene.root = scheduleGenSelector.root
+                    }
+
+                    transitionToCalendar(scheduleViewer,
+                        loading,
+                        scheduleGenSelector.getArgument(),
+                        rankingSelector.getRanking())
                 }
-
-                val argument = argumentSelector.getArgument()
-                transitionToCalendar(scheduleViewer, loading, argument)
             }
 
-            argumentSelector.onBack = {
-                scene.root = termSelector.root
+            scheduleGenSelector.onBack = {
+                scene.root = rankingSelector.root
             }
 
-            scene.root = argumentSelector.root
+            scene.root = scheduleGenSelector.root
         }
 
         scene = Scene(termSelector.root)
@@ -64,9 +78,12 @@ class App : Application() {
         stage.show()
     }
 
-    private fun transitionToCalendar(scheduleViewer: CalendarPage, loadingPage: LoadingPage, argument: ScheduleGenArguments) {
+    private fun transitionToCalendar(scheduleViewer: CalendarPage,
+                                     loadingPage: LoadingPage,
+                                     genArguments: ScheduleGenArguments,
+                                     rankingArguments: ScheduleRankingArguments) {
         fxScope.launch {
-            val classSearchesDeferred = argument.classGroupsSearches.map { searches ->
+            val classSearchesDeferred = genArguments.classGroupsSearches.map { searches ->
                 searches.map { search -> async {
                     val response = getSearch(search).map { async {
                         val converted = convertResponse(it)
@@ -85,8 +102,10 @@ class App : Application() {
 
             scheduleViewer.loadSchedules(genSchedules(
                 classGroups,
-                argument.tries,
-                argument.skipChance).sortedBy { -valueSchedule(it) })
+                genArguments.tries,
+                genArguments.skipChance).sortedBy { -valueSchedule(it,
+                                                                   rankingArguments.creditValue,
+                                                                   rankingArguments.adjacentValue) })
 
             scene.root = scheduleViewer.root
         }

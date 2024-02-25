@@ -128,14 +128,16 @@ class CalendarPage : Page() {
     private fun setCalendar(name: String, schedule: List<ClassData>?) {
         currSchedule = schedule
 
-        calendarNameFormat = "Name: %s"
-        setCalendarName(name)
-
         calendar.clear()
 
         if (schedule == null) {
+            calendarNameFormat = ""
+            setCalendarName(name)
             return
         }
+
+        calendarNameFormat = "Name: %s, Credits: ${schedule.sumOf { it.credits ?: 0 }}"
+        setCalendarName(name)
 
         val now = LocalDate.now()
         for (classDatum in schedule) {

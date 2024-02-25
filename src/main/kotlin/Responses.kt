@@ -44,6 +44,7 @@ data class MeetingFacultyResponse(val meetingTime: MeetingTimeResponse)
 data class ClassDataResponse(val courseReferenceNumber: String,
                              val courseTitle: String,
                              val meetingsFaculty: List<MeetingFacultyResponse>,
+                             val creditHours: Int?,
                              val term: String)
 
 @Serializable

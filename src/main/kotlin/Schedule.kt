@@ -14,8 +14,9 @@ data class MeetTime(val start: DayTime, val end: DayTime, val day: DayOfWeek) {
 }
 
 // If links is null it is unknown
+// Why can credits be null
 @Serializable
-data class ClassData(val crn: String, val title: String, val meetTimes: List<MeetTime>, val links: List<ClassData>?)
+data class ClassData(val crn: String, val title: String, val meetTimes: List<MeetTime>, val credits: Int?, val links: List<ClassData>?)
 
 suspend fun convertResponse(classDataResponse: ClassDataResponse, link: Boolean = false): ClassData {
     val meetTimes = mutableListOf<MeetTime>()
@@ -65,12 +66,14 @@ suspend fun convertResponse(classDataResponse: ClassDataResponse, link: Boolean 
         ClassData(classDataResponse.courseReferenceNumber,
             classDataResponse.courseTitle,
             meetTimes.distinct(),
+            classDataResponse.creditHours,
             null)
     } else {
         val linksResponse = getLinks(classDataResponse.courseReferenceNumber, classDataResponse.term)
         ClassData(classDataResponse.courseReferenceNumber,
             classDataResponse.courseTitle,
             meetTimes.distinct(),
+            classDataResponse.creditHours,
             // I don't know why there is an outer list it seems to only have one element
             linksResponse.linkedData.flatMap { linkedData -> linkedData.map { convertResponse(it, true) } })
     }
@@ -107,6 +110,7 @@ fun genSchedules(classGroups: List<List<ClassData>>, tries: Int, skipChance: Dou
 
 fun addLinks(schedule: MutableSet<ClassData>, scheduleMeetTimes: MutableList<MeetTime>): Boolean {
     val links = mutableSetOf<ClassData>()
+
     // Unclear if the shuffled is necessary
     for (classData in schedule.shuffled()) {
         if (classData.links!!.isNotEmpty()) {
@@ -146,18 +150,19 @@ fun adjacent(first: ClassData, second: ClassData, deltaMinutes: Int): Boolean {
     return false
 }
 
-fun valueSchedule(schedule: List<ClassData>): Double {
+fun valueSchedule(schedule: List<ClassData>, creditValue: Double, adjacentValue: Double): Double {
     var value = 0.0
 
     for (i in schedule.indices) {
         for (j in 0..<i) {
             if (adjacent(schedule[i], schedule[j], 15)) {
-                value += 0.01
+                value += adjacentValue
             }
         }
     }
 
-    value += schedule.size
+    // Why can credits be null
+    value += schedule.sumOf { (it.credits ?: 0) * creditValue }
 
     return value
 }

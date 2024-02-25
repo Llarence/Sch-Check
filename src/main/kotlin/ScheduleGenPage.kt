@@ -14,6 +14,8 @@ import java.time.DayOfWeek
 
 val numberFormat: NumberFormat = NumberFormat.getNumberInstance()
 
+// TODO: Check if there is a better way to do this because the double
+//  spinner does not need this
 fun createIntFormatter(): TextFormatter<Int> {
     return TextFormatter(
         IntegerStringConverter(), 0
@@ -46,10 +48,13 @@ private val optionStringConverter = object : StringConverter<Option>() {
 }
 
 class DayTimePicker : VBox() {
-    private val hour = Spinner<Int>(0, 23, 0).apply { isEditable = true }
-    private val minute = Spinner<Int>(0, 59, 0).apply { isEditable = true }
+    private val hour = Spinner<Int>(0, 23, 0)
+    private val minute = Spinner<Int>(0, 59, 0)
 
     init {
+        hour.isEditable = true
+        minute.isEditable = true
+
         children.addAll(Label("Hour", hour), Label("Minute", minute))
     }
 
@@ -73,11 +78,11 @@ class SearchPane(private val term: Option, default: Search = Search(term = term.
     private val college = ComboBox<Option>()
     private val department = ComboBox<Option>()
     private val scheduleType = ComboBox<Option>()
-    private val durationValue = Spinner<Double>().apply { isEditable = true }
+    private val durationValue = Spinner<Double>(-Double.MAX_VALUE, Double.MAX_VALUE, 0.0)
     private val durationType = ComboBox<Option>()
     private val partOfTerm = ComboBox<Option>()
-    private val courseNumberRangeLow = Spinner<Int>(0, Int.MAX_VALUE, Int.MIN_VALUE).apply { isEditable = true; editor.textFormatter = createIntFormatter() }
-    private val courseNumberRangeHigh = Spinner<Int>(0, Int.MAX_VALUE, Int.MIN_VALUE).apply { isEditable = true; editor.textFormatter = createIntFormatter() }
+    private val courseNumberRangeLow = Spinner<Int>(Int.MIN_VALUE, Int.MAX_VALUE, 0)
+    private val courseNumberRangeHigh = Spinner<Int>(Int.MIN_VALUE, Int.MAX_VALUE, 0)
     private val monday = CheckBox("Monday")
     private val tuesday = CheckBox("Tuesday")
     private val wednesday = CheckBox("Wednesday")
@@ -91,6 +96,14 @@ class SearchPane(private val term: Option, default: Search = Search(term = term.
 
     init {
         val searchOptions = searchOptions[term]!!
+
+        durationValue.isEditable = true
+
+        courseNumberRangeLow.isEditable = true
+        courseNumberRangeLow.editor.textFormatter = createIntFormatter()
+
+        courseNumberRangeHigh.isEditable = true
+        courseNumberRangeHigh.editor.textFormatter = createIntFormatter()
 
         if (default.courseNumber != null) { courseNumber.text = default.courseNumber }
         if (default.keyword != null) { keyword.text = default.keyword }
@@ -225,7 +238,7 @@ fun addAddTab(tabPane: TabPane, tabGen: () -> Tab) {
     tabPane.tabs.add(addButton)
 }
 
-class ArgumentPage(private val term: Option) : Page() {
+class ScheduleGenPage(private val term: Option) : Page() {
     private val tabPane = TabPane()
 
     override val root = ScrollPane()
@@ -272,8 +285,7 @@ class ArgumentPage(private val term: Option) : Page() {
         tabPane.tabs.add(tab)
         addAddTab(tabPane, ::genClassGroupTab)
 
-        val mainVBox = VBox(headerHBox, tabPane)
-        root.content = mainVBox
+        root.content = VBox(headerHBox, tabPane)
     }
 
     // Hate all the casting
