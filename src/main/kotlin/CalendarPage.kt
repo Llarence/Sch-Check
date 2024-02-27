@@ -141,17 +141,31 @@ class CalendarPage : Page() {
 
         val now = LocalDate.now()
         for (classDatum in schedule) {
-            // TODO: Somehow show classes with no meetTimes
-            for (meetTime in classDatum.meetTimes) {
-                val date = now.withScheduleWeekday(meetTime.day)
+            val meetTimes = classDatum.meetTimes.ifEmpty {
+                listOf(null)
+            }
 
-                val interval = Interval(
-                    date.atTime(meetTime.start.hour, meetTime.start.minute),
-                    date.atTime(meetTime.end.hour, meetTime.end.minute)
-                )
+            for (meetTime in meetTimes) {
+                val date: LocalDate
+                val interval: Interval
+                if (meetTime == null) {
+                    date = now.withScheduleWeekday(DayOfWeek.SATURDAY)
+                    interval = Interval(date.atTime(11, 0), date.atTime(13, 0))
+                } else {
+                    date = now.withScheduleWeekday(meetTime.day)
+                    interval = Interval(
+                        date.atTime(meetTime.start.hour, meetTime.start.minute),
+                        date.atTime(meetTime.end.hour, meetTime.end.minute)
+                    )
+                }
 
                 // TODO: Make the entry un-modifiable
-                val entry = Entry<Nothing>("CRN: ${classDatum.crn}, Title: ${classDatum.title}", interval)
+                val entry = Entry<Nothing>(
+                    "CRN: ${classDatum.crn}, Title: ${classDatum.title}" +
+                            if (meetTime == null) { ", NOT IN PERSON" } else { "" },
+                    interval
+                )
+
                 entry.recurrenceRule = "RRULE:FREQ=WEEKLY"
                 entry.styleClass.clear()
                 entry.styleClass.add("entry")
