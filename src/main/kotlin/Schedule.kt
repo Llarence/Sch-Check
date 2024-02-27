@@ -61,19 +61,22 @@ suspend fun convertResponse(classDataResponse: ClassDataResponse, link: Boolean 
         }
     }
 
+    // TODO: Figure out how credit hours work
+    val credits = classDataResponse.creditHours ?: classDataResponse.creditHourLow!!
+
     // TODO: Sometimes there can be identical copies of a MeetTime such as with 56169 Spring Term 2024
     return if (link) {
         ClassData(classDataResponse.courseReferenceNumber,
             classDataResponse.courseTitle,
             meetTimes.distinct(),
-            classDataResponse.creditHours,
+            credits,
             null)
     } else {
         val linksResponse = getLinks(classDataResponse.courseReferenceNumber, classDataResponse.term)
         ClassData(classDataResponse.courseReferenceNumber,
             classDataResponse.courseTitle,
             meetTimes.distinct(),
-            classDataResponse.creditHours,
+            credits,
             // I don't know why there is an outer list it seems to only have one element
             linksResponse.linkedData.flatMap { linkedData -> linkedData.map { convertResponse(it, true) } })
     }

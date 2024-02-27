@@ -37,12 +37,7 @@ class App : Application() {
         val scheduleViewer = CalendarPage()
 
         val termSelector = TermSelectPage()
-
         val rankingSelector = ScheduleRankingPage()
-        rankingSelector.onBack = {
-            scene.root = termSelector.root
-        }
-
         termSelector.onNext = {
             val scheduleGenSelector = ScheduleGenPage(termSelector.getTerm())
 
@@ -61,6 +56,10 @@ class App : Application() {
                         loading,
                         scheduleGenSelector.getArgument(),
                         rankingSelector.getRanking())
+                }
+
+                rankingSelector.onBack = {
+                    scene.root = scheduleGenSelector.root
                 }
             }
 
