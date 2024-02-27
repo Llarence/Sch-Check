@@ -1,5 +1,7 @@
 import kotlinx.serialization.Serializable
 import java.time.DayOfWeek
+import kotlin.math.abs
+import kotlin.math.min
 import kotlin.random.Random
 
 @Serializable
@@ -153,19 +155,28 @@ fun adjacent(first: ClassData, second: ClassData, deltaMinutes: Int): Boolean {
     return false
 }
 
-fun valueSchedule(schedule: List<ClassData>, creditValue: Double, adjacentValue: Double): Double {
+fun valueSchedule(schedule: List<ClassData>, rankingArguments: ScheduleRankingArguments): Double {
     var value = 0.0
 
     for (i in schedule.indices) {
+        val classData = schedule[i]
+
+        for (meetTime in classData.meetTimes) {
+            val disStart = abs(meetTime.start.inMinutes - rankingArguments.targetTime.inMinutes)
+            val disEnd = abs(meetTime.end.inMinutes - rankingArguments.targetTime.inMinutes)
+
+            value -= rankingArguments.timeDistanceValue * min(disStart, disEnd)
+        }
+
         for (j in 0..<i) {
-            if (adjacent(schedule[i], schedule[j], 15)) {
-                value += adjacentValue
+            if (adjacent(classData, schedule[j], 15)) {
+                value += rankingArguments.adjacentValue
             }
         }
     }
 
     // Why can credits be null
-    value += schedule.sumOf { (it.credits ?: 0) * creditValue }
+    value += schedule.sumOf { (it.credits ?: 0) * rankingArguments.creditValue }
 
     return value
 }

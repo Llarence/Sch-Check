@@ -58,6 +58,11 @@ class DayTimePicker : VBox() {
         children.addAll(Label("Hour", hour), Label("Minute", minute))
     }
 
+    fun setValue(dayTime: DayTime) {
+        hour.valueFactory.value = dayTime.hour
+        minute.valueFactory.value = dayTime.minute
+    }
+
     fun getValue(): DayTime {
         return DayTime(hour.value, minute.value)
     }
@@ -121,6 +126,8 @@ class SearchPane(private val term: Option, default: Search = Search(term = term.
         friday.isSelected = DayOfWeek.FRIDAY in default.days
         saturday.isSelected = DayOfWeek.SATURDAY in default.days
         sunday.isSelected = DayOfWeek.SUNDAY in default.days
+        if (default.start != null) { start.setValue(default.start) }
+        if (default.end != null) { end.setValue(default.end) }
         openOnly.isSelected = default.openOnly
 
         children.addAll(

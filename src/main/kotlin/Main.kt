@@ -49,7 +49,7 @@ class App : Application() {
                     scene.root = loading.root
 
                     scheduleViewer.onBack = {
-                        scene.root = scheduleGenSelector.root
+                        scene.root = rankingSelector.root
                     }
 
                     transitionToCalendar(scheduleViewer,
@@ -64,7 +64,7 @@ class App : Application() {
             }
 
             scheduleGenSelector.onBack = {
-                scene.root = rankingSelector.root
+                scene.root = termSelector.root
             }
 
             scene.root = scheduleGenSelector.root
@@ -82,6 +82,7 @@ class App : Application() {
                                      genArguments: ScheduleGenArguments,
                                      rankingArguments: ScheduleRankingArguments) {
         fxScope.launch {
+            // TODO: Just pass genArguments to genSchedules and have classGroupsSearches by outside of it
             val classSearchesDeferred = genArguments.classGroupsSearches.map { searches ->
                 searches.map { search -> async {
                     val response = getSearch(search).map { async {
@@ -102,9 +103,8 @@ class App : Application() {
             scheduleViewer.loadSchedules(genSchedules(
                 classGroups,
                 genArguments.tries,
-                genArguments.skipChance).sortedBy { -valueSchedule(it,
-                                                                   rankingArguments.creditValue,
-                                                                   rankingArguments.adjacentValue) })
+                genArguments.skipChance).sortedBy { -valueSchedule(it, rankingArguments) }
+            )
 
             scene.root = scheduleViewer.root
         }
