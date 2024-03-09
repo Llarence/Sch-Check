@@ -20,7 +20,7 @@ class ScheduleRankingPage : Page() {
     private val creditValue = Spinner<Double>(-Double.MAX_VALUE, Double.MAX_VALUE, 0.0)
     private val adjacentValue = Spinner<Double>(-Double.MAX_VALUE, Double.MAX_VALUE, 0.0)
     private val targetTime = DayTimePicker()
-    private val timeDistantValue = Spinner<Double>(-Double.MAX_VALUE, Double.MAX_VALUE, 0.0)
+    private val timeDistanceValue = Spinner<Double>(-Double.MAX_VALUE, Double.MAX_VALUE, 0.0)
 
     init {
         val backButton = Button("Back")
@@ -61,26 +61,26 @@ class ScheduleRankingPage : Page() {
 
         creditValue.isEditable = true
         adjacentValue.isEditable = true
-        timeDistantValue.isEditable = true
+        timeDistanceValue.isEditable = true
 
         root.content = VBox(headerHBox,
             Label("Credit Value", creditValue),
             Label("Adjacent Value", adjacentValue),
             Label("Target Time", targetTime),
-            Label("Minute Distance Value", timeDistantValue))
+            Label("Minute Distance Value", timeDistanceValue))
     }
 
     fun getRanking(): ScheduleRankingArguments {
         return ScheduleRankingArguments(creditValue.value,
             adjacentValue.value,
             targetTime.getValue(),
-            timeDistantValue.value)
+            timeDistanceValue.value)
     }
 
     private fun setRanking(ranking: ScheduleRankingArguments) {
         creditValue.valueFactory.value = ranking.creditValue
         adjacentValue.valueFactory.value = ranking.adjacentValue
         targetTime.setValue(ranking.targetTime)
-        adjacentValue.valueFactory.value = ranking.timeDistanceValue
+        timeDistanceValue.valueFactory.value = ranking.timeDistanceValue
     }
 }
