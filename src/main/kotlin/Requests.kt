@@ -74,16 +74,16 @@ private val clientsSemaphore = Semaphore(1)
 
 private val cache = RequestResponseCache(
         File("./cache.json.gz"),
-        Duration.ofDays(30),
+        Duration.ofMinutes(/*30*/60), // This should somehow be lower for some requests like if the class is open or not
         1024L * 1024L * 1024L)
 
 val requestSemaphore = Semaphore(20)
 
-suspend fun cachedRequest(url: String, term: String? = null, withCleanClient: Boolean = false): String = withContext(Dispatchers.IO) {
+suspend fun cachedRequest(url: String, term: String? = null, withCleanClient: Boolean = false, cache: RequestResponseCache?): String = withContext(Dispatchers.IO) {
     // Hope this doesn't cause any collisions
     val cacheKey = (term ?: "") + url
 
-    val cacheVal1 = cache.getOrNull(cacheKey)
+    val cacheVal1 = cache?.getOrNull(cacheKey)
     if (cacheVal1 != null) {
         return@withContext cacheVal1
     }
@@ -115,7 +115,7 @@ suspend fun cachedRequest(url: String, term: String? = null, withCleanClient: Bo
     }
 
     if (waited) {
-        val cacheVal2 = cache.getOrNull(cacheKey)
+        val cacheVal2 = cache?.getOrNull(cacheKey)
 
         if (cacheVal2 != null) {
             requestSemaphore.release()
@@ -128,7 +128,7 @@ suspend fun cachedRequest(url: String, term: String? = null, withCleanClient: Bo
 
     // Could it check if it is making the same request as a different cacheRequest as well
     //  (that shouldn't happen though)
-    cache.set(cacheKey, response)
+    cache?.set(cacheKey, response)
 
     response
 }
@@ -136,7 +136,8 @@ suspend fun cachedRequest(url: String, term: String? = null, withCleanClient: Bo
 suspend fun getTerms(): List<OptionResponse> {
     val response = cachedRequest(
         "https://prodapps.isadm.oregonstate.edu/StudentRegistrationSsb/ssb/classSearch/" +
-                "getTerms?&offset=1&max=2147483647"
+                "getTerms?&offset=1&max=2147483647",
+        cache=cache
     )
 
     return json.decodeFromString<List<OptionResponse>>(response)
@@ -145,7 +146,8 @@ suspend fun getTerms(): List<OptionResponse> {
 suspend fun getOptions(type: String, term: String): List<OptionResponse> {
     val response = cachedRequest(
         "https://prodapps.isadm.oregonstate.edu/StudentRegistrationSsb/ssb/classSearch/" +
-                "get_$type?term=$term&offset=1&max=2147483647"
+                "get_$type?term=$term&offset=1&max=2147483647",
+        cache=cache
     )
 
     return json.decodeFromString(response)
@@ -161,7 +163,8 @@ suspend fun getSearch(search: Search): List<ClassDataResponse> {
             search.term,
             // Somehow the request is malformed in a way that once
             //  it gets one it returns the same things over and over
-            true
+            true,
+            cache=cache
         )
 
         val decodedResponse = json.decodeFromString<SearchResponse>(response)
@@ -180,7 +183,8 @@ suspend fun getSearch(search: Search): List<ClassDataResponse> {
 suspend fun getLinks(crn: String, term: String): LinkedSearchResponse {
     val response = cachedRequest(
         "https://prodapps.isadm.oregonstate.edu/StudentRegistrationSsb/ssb/searchResults/" +
-                "fetchLinkedSections?term=$term&courseReferenceNumber=$crn"
+                "fetchLinkedSections?term=$term&courseReferenceNumber=$crn",
+        cache=cache
     )
 
     return json.decodeFromString(response)

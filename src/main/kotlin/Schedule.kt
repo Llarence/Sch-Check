@@ -84,8 +84,9 @@ suspend fun convertResponse(classDataResponse: ClassDataResponse, link: Boolean 
     }
 }
 
+// TODO: Make the set part of
 fun genSchedules(classGroups: List<List<ClassData>>, tries: Int, skipChance: Double): List<List<ClassData>> {
-    val schedules = mutableListOf<List<ClassData>>()
+    val schedules = mutableSetOf<Set<ClassData>>()
     for (i in 0..<tries) {
         val scheduleMeetTimes = mutableListOf<MeetTime>()
         val schedule = mutableSetOf<ClassData>()
@@ -106,11 +107,11 @@ fun genSchedules(classGroups: List<List<ClassData>>, tries: Int, skipChance: Dou
         }
 
         if (schedule.isNotEmpty()) {
-            schedules.add(schedule.toList())
+            schedules.add(schedule)
         }
     }
 
-    return schedules
+    return schedules.map { it.toList() }
 }
 
 fun addLinks(schedule: MutableSet<ClassData>, scheduleMeetTimes: MutableList<MeetTime>): Boolean {

@@ -42,6 +42,7 @@ data class MeetingFacultyResponse(val meetingTime: MeetingTimeResponse)
 //  selecting term and hitting search shows some with multiple meetingsFaculties
 @Serializable
 data class ClassDataResponse(val courseReferenceNumber: String,
+                             val seatsAvailable: Int,
                              val courseTitle: String,
                              val meetingsFaculty: List<MeetingFacultyResponse>,
                              val creditHours: Int?,
