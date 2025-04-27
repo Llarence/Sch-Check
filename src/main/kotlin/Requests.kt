@@ -189,3 +189,7 @@ suspend fun getLinks(crn: String, term: String): LinkedSearchResponse {
 
     return json.decodeFromString(response)
 }
+
+fun saveCache() {
+    cache.save()
+}

@@ -105,9 +105,6 @@ class RequestResponseCache(private val file: File,
     fun set(key: String, value: String) {
         lock.acquire()
         data[key] = Pair(value, SerializableInstant(Instant.now()))
-
-        // This is probably really inefficient
-        save()
         lock.release()
     }
 
@@ -130,7 +127,7 @@ class RequestResponseCache(private val file: File,
         return output
     }
 
-    private fun save() {
+    fun save() {
         pruneCache()
 
         val fileStream = FileOutputStream(file)

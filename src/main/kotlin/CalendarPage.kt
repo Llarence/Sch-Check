@@ -9,7 +9,10 @@ import javafx.scene.control.*
 import javafx.scene.control.Alert.AlertType
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.launch
 import org.controlsfx.control.textfield.CustomTextField
 import java.io.File
@@ -95,7 +98,7 @@ class CalendarPage : Page() {
         }
         root.children.addAll(headerHBox, calendarView)
 
-        fxScope.launch {
+        fxGlobalScope.launch {
             while (true) {
                 calendarView.time = LocalTime.now()
                 calendarView.today = LocalDate.now()
@@ -176,39 +179,43 @@ class CalendarPage : Page() {
     }
 }
 
-// TODO: Check this for a memory leak
 class LoadingPage : Page() {
-    override val root = Label()
+    private val progressBar = ProgressBar()
 
-    private var dots = 0
+    override val root = VBox()
+
+    private var tasksDone = 0
+    private var tasks = 0
+
+    // This should prevent the memory leak caused by a coroutine in while loop referencing this
+    private val scope = CoroutineScope(Dispatchers.JavaFx)
 
     init {
-        root.alignment = Pos.CENTER
-        root.text = "Loading"
+        root.children.add(progressBar)
 
-        var dotDecay = 0.0
-        // This may cause a memory leak (maybe)
-        fxScope.launch {
-            while (true) {
-                delay(100)
-
-                dotDecay += dots * 0.2
-                dotDecay = min(dotDecay, dots.toDouble())
-
-                val currDecay = dotDecay.toInt()
-                if (currDecay != 0) {
-                    setDots(dots - currDecay)
-                }
-            }
-        }
+        clear()
     }
 
-    private fun setDots(newDots: Int) {
-        dots = newDots
-        root.text = "Loading${".".repeat(dots)}"
+    fun clear() {
+        tasksDone = 0
+        tasks = 0
+
+        progressBar.progress = 0.0
     }
 
-    fun stepDots() {
-        setDots(dots + 1)
+    private fun update() {
+       progressBar.progress = tasksDone.toDouble() / tasks
+    }
+
+    fun pushTask() {
+        tasks++
+
+        update()
+    }
+
+    fun popTask() {
+        tasksDone++
+
+        update()
     }
 }
