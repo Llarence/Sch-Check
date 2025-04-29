@@ -129,6 +129,11 @@ data class Search(val subject: String? = null,
         return queries
     }
 
+    // Lazy way of doing this
+    fun empty(): Boolean {
+        return toQueries().size == 1
+    }
+
     override fun toString(): String {
         return toQueries().joinToString("&")
     }

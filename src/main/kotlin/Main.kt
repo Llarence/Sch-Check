@@ -25,7 +25,9 @@ class App : Application() {
 
     override fun start(stage: Stage) {
         stage.title = "Calendar"
-        stage.isMaximized = true
+        stage.width = 800.0
+        stage.height = 640.0
+
         stage.centerOnScreen()
 
         stage.setOnCloseRequest {
@@ -90,7 +92,7 @@ class App : Application() {
         fxGlobalScope.launch {
             // TODO: Just pass genArguments to genSchedules and have classGroupsSearches by outside of it
             val classSearchesDeferred = genArguments.classGroupsSearches.map { searches ->
-                searches.map { search -> async {
+                searches.filter { !it.empty() }.map { search -> async {
                     loadingPage.pushTask()
 
                     val response = getSearch(search).map { async {
