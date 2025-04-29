@@ -73,7 +73,7 @@ private val termClients = mutableMapOf<String?, TermedClient>()
 private val clientsSemaphore = Semaphore(1)
 
 private val cache = RequestResponseCache(
-        File("./cache.json.gz"),
+        File("saves/cache.json.gz"),
         Duration.ofMinutes(/*30*/60), // This should somehow be lower for some requests like if the class is open or not
         1024L * 1024L * 1024L)
 

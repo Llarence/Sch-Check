@@ -4,7 +4,6 @@ import com.calendarfx.model.Entry
 import com.calendarfx.model.Interval
 import com.calendarfx.view.CalendarView
 import javafx.event.EventHandler
-import javafx.geometry.Pos
 import javafx.scene.control.*
 import javafx.scene.control.Alert.AlertType
 import javafx.scene.layout.HBox
@@ -19,7 +18,6 @@ import java.io.File
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
-import kotlin.math.min
 
 private val calendarSaver = Saver.create<List<ClassData>>(File("saves/calendars/"))
 
@@ -43,7 +41,7 @@ class CalendarPage : Page() {
 
     init {
         val backButton = Button("Back")
-        backButton.onAction = EventHandler { onBack() }
+        backButton.onAction = EventHandler { this.onBack() }
 
         val prevButton = Button("Previous")
         prevButton.onAction = EventHandler { shiftSchedule(-1) }
@@ -186,9 +184,6 @@ class LoadingPage : Page() {
 
     private var tasksDone = 0
     private var tasks = 0
-
-    // This should prevent the memory leak caused by a coroutine in while loop referencing this
-    private val scope = CoroutineScope(Dispatchers.JavaFx)
 
     init {
         root.children.add(progressBar)

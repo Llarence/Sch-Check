@@ -122,4 +122,4 @@ class App : Application() {
 }
 
 // TODO: add oring of "enum" fields (ie you could pick ecampus or corvallis)
-suspend fun main() = launch(App::class.java)//check()
+fun main() = launch(App::class.java)
