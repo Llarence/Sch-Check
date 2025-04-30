@@ -34,3 +34,7 @@ If you want to add to it the rough layout is main defines the whole project and 
 Requests handles actually requesting to the OSU backend and Responses has a collection of data classes that partially represent the response you can get from requests.
 Cache contains code that writes to teh cache.
 Schedule contains the code that does the schedule generation.
+
+JavaFX has been removed from java for a while so to build it you need to use jlink this has made the project very messy, but it does currently build.
+Just try to clean/build before running jlink. If you want to run main directly through intellij you must move module-info.java to kotlin and clean before running.
+AFAIK this is a problem with intellij and there is a current issue about it.
