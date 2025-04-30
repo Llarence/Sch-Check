@@ -1,3 +1,5 @@
+package me.llarence.schcheck
+
 import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
@@ -26,14 +28,14 @@ object DayTimeSerializer : KSerializer<DayTime> {
 
 @Serializable
 data class MeetingTimeResponse(val monday: Boolean,
-                    val tuesday: Boolean,
-                    val wednesday: Boolean,
-                    val thursday: Boolean,
-                    val friday: Boolean,
-                    val saturday: Boolean,
-                    val sunday: Boolean,
-                    @Serializable(with = DayTimeSerializer::class) val beginTime: DayTime?,
-                    @Serializable(with = DayTimeSerializer::class) val endTime: DayTime?)
+                               val tuesday: Boolean,
+                               val wednesday: Boolean,
+                               val thursday: Boolean,
+                               val friday: Boolean,
+                               val saturday: Boolean,
+                               val sunday: Boolean,
+                               @Serializable(with = DayTimeSerializer::class) val beginTime: DayTime?,
+                               @Serializable(with = DayTimeSerializer::class) val endTime: DayTime?)
 
 @Serializable
 data class MeetingFacultyResponse(val meetingTime: MeetingTimeResponse)

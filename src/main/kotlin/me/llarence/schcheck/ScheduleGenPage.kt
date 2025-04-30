@@ -1,3 +1,5 @@
+package me.llarence.schcheck
+
 import javafx.event.EventHandler
 import javafx.scene.Node
 import javafx.scene.control.*

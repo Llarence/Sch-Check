@@ -1,3 +1,5 @@
+package me.llarence.schcheck
+
 import kotlinx.serialization.Serializable
 import java.time.DayOfWeek
 import kotlin.math.abs
@@ -26,39 +28,53 @@ suspend fun convertResponse(classDataResponse: ClassDataResponse, link: Boolean 
     for (meetingFaculty in classDataResponse.meetingsFaculty) {
         if (meetingFaculty.meetingTime.beginTime != null && meetingFaculty.meetingTime.endTime != null) {
             if (meetingFaculty.meetingTime.monday) {
-                meetTimes.add(MeetTime(meetingFaculty.meetingTime.beginTime,
+                meetTimes.add(
+                    MeetTime(meetingFaculty.meetingTime.beginTime,
                     meetingFaculty.meetingTime.endTime,
-                    DayOfWeek.MONDAY))
+                    DayOfWeek.MONDAY)
+                )
             }
             if (meetingFaculty.meetingTime.tuesday) {
-                meetTimes.add(MeetTime(meetingFaculty.meetingTime.beginTime,
+                meetTimes.add(
+                    MeetTime(meetingFaculty.meetingTime.beginTime,
                     meetingFaculty.meetingTime.endTime,
-                    DayOfWeek.TUESDAY))
+                    DayOfWeek.TUESDAY)
+                )
             }
             if (meetingFaculty.meetingTime.wednesday) {
-                meetTimes.add(MeetTime(meetingFaculty.meetingTime.beginTime,
+                meetTimes.add(
+                    MeetTime(meetingFaculty.meetingTime.beginTime,
                     meetingFaculty.meetingTime.endTime,
-                    DayOfWeek.WEDNESDAY))
+                    DayOfWeek.WEDNESDAY)
+                )
             }
             if (meetingFaculty.meetingTime.thursday) {
-                meetTimes.add(MeetTime(meetingFaculty.meetingTime.beginTime,
+                meetTimes.add(
+                    MeetTime(meetingFaculty.meetingTime.beginTime,
                     meetingFaculty.meetingTime.endTime,
-                    DayOfWeek.THURSDAY))
+                    DayOfWeek.THURSDAY)
+                )
             }
             if (meetingFaculty.meetingTime.friday) {
-                meetTimes.add(MeetTime(meetingFaculty.meetingTime.beginTime,
+                meetTimes.add(
+                    MeetTime(meetingFaculty.meetingTime.beginTime,
                     meetingFaculty.meetingTime.endTime,
-                    DayOfWeek.FRIDAY))
+                    DayOfWeek.FRIDAY)
+                )
             }
             if (meetingFaculty.meetingTime.saturday) {
-                meetTimes.add(MeetTime(meetingFaculty.meetingTime.beginTime,
+                meetTimes.add(
+                    MeetTime(meetingFaculty.meetingTime.beginTime,
                     meetingFaculty.meetingTime.endTime,
-                    DayOfWeek.SATURDAY))
+                    DayOfWeek.SATURDAY)
+                )
             }
             if (meetingFaculty.meetingTime.sunday) {
-                meetTimes.add(MeetTime(meetingFaculty.meetingTime.beginTime,
+                meetTimes.add(
+                    MeetTime(meetingFaculty.meetingTime.beginTime,
                     meetingFaculty.meetingTime.endTime,
-                    DayOfWeek.SUNDAY))
+                    DayOfWeek.SUNDAY)
+                )
             }
         }
     }

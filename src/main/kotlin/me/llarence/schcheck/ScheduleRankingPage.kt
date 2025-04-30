@@ -1,3 +1,5 @@
+package me.llarence.schcheck
+
 import javafx.event.EventHandler
 import javafx.scene.control.*
 import javafx.scene.layout.HBox

@@ -1,3 +1,5 @@
+package me.llarence.schcheck
+
 import com.calendarfx.model.Calendar
 import com.calendarfx.model.CalendarSource
 import com.calendarfx.model.Entry
@@ -8,10 +10,7 @@ import javafx.scene.control.*
 import javafx.scene.control.Alert.AlertType
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.launch
 import org.controlsfx.control.textfield.CustomTextField
 import java.io.File

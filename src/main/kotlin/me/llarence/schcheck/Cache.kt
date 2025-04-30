@@ -1,3 +1,5 @@
+package me.llarence.schcheck
+
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -48,13 +50,20 @@ class RequestResponseCache(private val file: File,
 
     init {
         if (!file.exists()) {
+            val folder = file.parentFile
+            if (!folder.exists()) {
+                if (!folder.mkdirs()) {
+                    throw IOException()
+                }
+            }
+
             if (!file.createNewFile()) {
                 throw IOException()
             }
         }
     }
 
-    private val data: MutableMap<String, Pair<String, SerializableInstant>>
+    private var data: MutableMap<String, Pair<String, SerializableInstant>>
     private var size = 0L
 
     init {
@@ -63,9 +72,15 @@ class RequestResponseCache(private val file: File,
         if (fileStream.available() == 0) {
             data = mutableMapOf()
         } else {
-            val gzipStream = GZIPInputStream(fileStream)
-            data = cacheJson.decodeFromStream(gzipStream)
-            gzipStream.close()
+            data = try {
+                val gzipStream = GZIPInputStream(fileStream)
+                val read: MutableMap<String, Pair<String, SerializableInstant>> = cacheJson.decodeFromStream(gzipStream)
+                gzipStream.close()
+
+                read
+            } catch (err: Exception) {
+                mutableMapOf()
+            }
         }
         fileStream.close()
 

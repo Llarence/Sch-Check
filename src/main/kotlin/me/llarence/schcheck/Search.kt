@@ -1,3 +1,5 @@
+package me.llarence.schcheck
+
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import java.time.DayOfWeek
@@ -37,7 +39,11 @@ enum class AMPM(private val value: String) {
 
 @Serializable
 data class DayTime(val hour: Int, val minute: Int) {
-    val amPM = if (hour < 12) { AMPM.AM } else {AMPM.PM }
+    val amPM = if (hour < 12) {
+        AMPM.AM
+    } else {
+        AMPM.PM
+    }
     val hour12: Int
     val inMinutes = (hour * 60) + minute
 

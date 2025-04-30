@@ -1,3 +1,5 @@
+package me.llarence.schcheck
+
 import javafx.application.Application
 import javafx.application.Application.launch
 import javafx.application.Platform
@@ -86,7 +88,8 @@ class App : Application() {
     private fun transitionToCalendar(scheduleViewer: CalendarPage,
                                      loadingPage: LoadingPage,
                                      genArguments: ScheduleGenArguments,
-                                     rankingArguments: ScheduleRankingArguments) {
+                                     rankingArguments: ScheduleRankingArguments
+    ) {
         loadingPage.clear()
 
         fxGlobalScope.launch {
@@ -112,7 +115,8 @@ class App : Application() {
                 deferred.await().map { it.await() } }
             }
 
-            scheduleViewer.loadSchedules(genSchedules(
+            scheduleViewer.loadSchedules(
+                genSchedules(
                 classGroups,
                 genArguments.tries,
                 genArguments.skipChance).sortedBy { -valueSchedule(it, rankingArguments) }
