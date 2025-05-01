@@ -21,6 +21,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+  
     - name: Set up open JDK 11
       uses: actions/setup-java@v4
       with:
@@ -32,3 +33,9 @@ jobs:
 
     - name: Build with Gradle Wrapper
       run: ./gradlew clean jlink
+
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: Build
+        path: build/image
