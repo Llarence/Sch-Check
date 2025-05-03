@@ -40,6 +40,7 @@ The OSU Schedule Generator helps users create customized schedules by selecting 
 - The scheduler will cache class data for faster future searches (caching lasts for 1 hour).
 - You can save and load schedules to/from the `saves` directory for future use using the text field and save load buttons at the top.
 - You cannot modify the schedules if it looks like you can.
+- Online classes will appear on Saturday at 12.
 
 ## How to Build/Modify
 
