@@ -1,4 +1,4 @@
- OSU Schedule Generator
+# OSU Schedule Generator
 
 ## Overview
 
