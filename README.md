@@ -15,7 +15,7 @@ The OSU Schedule Generator helps users create customized schedules by selecting 
 ### 1. Download and Run
 
 - Download the `.zip` for your OS from the releases page. (Windows and Linux are both x64 and Mac is arm64 if you have a different architecture you must build from source)
-- Unzip the file and run either `app` for Linux/Mac or `app.bat` file. A `saves` directory will be created in the folder where the app is run. There is a cache in there and to clear it just delete the file.
+- Unzip the file and run either `bin/app` for Linux/Mac or `bin/app.bat` file. A `saves` directory will be created in the folder where the app is run. There is a cache in there and to clear it just delete the file.
 
 ### 2. Set Up Your Schedule
 
