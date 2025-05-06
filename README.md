@@ -56,5 +56,5 @@ This project is built with **IntelliJ IDEA** using **Kotlin** and **JavaFX**. If
 
 - Since **JavaFX** was removed from Java, you’ll need to use **JLink** to build the project. This process can be a bit messy, but it currently works.
    - Make sure to **clean** before running `jlink`.
-   - If you want to run `main` directly in IntelliJ, you must move `module-info.java` to `src/kotlin`, and clean the project before running. (My understanding is that this is a bug/quirk with Intellij)
+   - If you want to run `main` directly in IntelliJ, you must move `module-info.java` out to `src`, and clean the project before running. (My understanding is that this is a bug/quirk with Intellij)
    - The CI is able to build it so that may provide inspiration
