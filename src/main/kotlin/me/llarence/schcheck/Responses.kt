@@ -7,6 +7,8 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
+import java.text.SimpleDateFormat
+import java.util.*
 
 val json = Json { ignoreUnknownKeys = true }
 
@@ -26,6 +28,21 @@ object DayTimeSerializer : KSerializer<DayTime> {
     }
 }
 
+object DateSerializer : KSerializer<Date> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("DateSerializer", PrimitiveKind.STRING)
+
+    // They use month day year for some reason
+    val formatter = SimpleDateFormat("MM/dd/yyyy")
+
+    override fun serialize(encoder: Encoder, value: Date) {
+        encoder.encodeString(formatter.format(value))
+    }
+
+    override fun deserialize(decoder: Decoder): Date {
+        return formatter.parse(decoder.decodeString())
+    }
+}
+
 @Serializable
 data class MeetingTimeResponse(val monday: Boolean,
                                val tuesday: Boolean,
@@ -34,8 +51,10 @@ data class MeetingTimeResponse(val monday: Boolean,
                                val friday: Boolean,
                                val saturday: Boolean,
                                val sunday: Boolean,
-                               @Serializable(with = DayTimeSerializer::class) val beginTime: DayTime?,
-                               @Serializable(with = DayTimeSerializer::class) val endTime: DayTime?)
+                               @Serializable(with=DayTimeSerializer::class) val beginTime: DayTime?,
+                               @Serializable(with=DayTimeSerializer::class) val endTime: DayTime?,
+                               @Serializable(with=DateSerializer::class) val startDate: Date,
+                               @Serializable(with=DateSerializer::class) val endDate: Date)
 
 @Serializable
 data class MeetingFacultyResponse(val meetingTime: MeetingTimeResponse)

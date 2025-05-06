@@ -129,4 +129,6 @@ class App : Application() {
 
 // TODO: add oring of "enum" fields (ie you could pick ecampus or corvallis)
 // TODO: add class groups where you take n classes from
+// TODO: fix adjacent value
+// TODO: fix confusing behaviour on minute distance value
 fun main() = launch(App::class.java)

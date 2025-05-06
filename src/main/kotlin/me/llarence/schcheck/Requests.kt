@@ -139,7 +139,7 @@ suspend fun getTerms(): List<OptionResponse> {
     val response = cachedRequest(
         "https://prodapps.isadm.oregonstate.edu/StudentRegistrationSsb/ssb/classSearch/" +
                 "getTerms?&offset=1&max=2147483647",
-        cache= cache
+        cache=cache
     )
 
     return json.decodeFromString<List<OptionResponse>>(response)
@@ -149,7 +149,7 @@ suspend fun getOptions(type: String, term: String): List<OptionResponse> {
     val response = cachedRequest(
         "https://prodapps.isadm.oregonstate.edu/StudentRegistrationSsb/ssb/classSearch/" +
                 "get_$type?term=$term&offset=1&max=2147483647",
-        cache= cache
+        cache=cache
     )
 
     return json.decodeFromString(response)
@@ -166,7 +166,7 @@ suspend fun getSearch(search: Search): List<ClassDataResponse> {
             // Somehow the request is malformed in a way that once
             //  it gets one it returns the same things over and over
             true,
-            cache= cache
+            cache=cache
         )
 
         val decodedResponse = json.decodeFromString<SearchResponse>(response)
@@ -186,7 +186,7 @@ suspend fun getLinks(crn: String, term: String): LinkedSearchResponse {
     val response = cachedRequest(
         "https://prodapps.isadm.oregonstate.edu/StudentRegistrationSsb/ssb/searchResults/" +
                 "fetchLinkedSections?term=$term&courseReferenceNumber=$crn",
-        cache= cache
+        cache=cache
     )
 
     return json.decodeFromString(response)

@@ -2,15 +2,20 @@ package me.llarence.schcheck
 
 import kotlinx.serialization.Serializable
 import java.time.DayOfWeek
+import java.util.*
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.random.Random
 
 @Serializable
-data class MeetTime(val start: DayTime, val end: DayTime, val day: DayOfWeek) {
+data class MeetTime(val start: DayTime, val end: DayTime, val day: DayOfWeek,
+                    @Serializable(with=DateSerializer::class) val startDate: Date,
+                    @Serializable(with=DateSerializer::class) val endDate: Date) {
     fun intersects(other: MeetTime): Boolean {
         if (day == other.day) {
-            return !(end.inMinutes < other.start.inMinutes || other.end.inMinutes < start.inMinutes)
+            if (!(end.inMinutes < other.start.inMinutes || other.end.inMinutes < start.inMinutes)) {
+                return !(endDate.before(other.startDate) || other.endDate.before(startDate))
+            }
         }
 
         return false
@@ -31,49 +36,63 @@ suspend fun convertResponse(classDataResponse: ClassDataResponse, link: Boolean 
                 meetTimes.add(
                     MeetTime(meetingFaculty.meetingTime.beginTime,
                     meetingFaculty.meetingTime.endTime,
-                    DayOfWeek.MONDAY)
+                    DayOfWeek.MONDAY,
+                    meetingFaculty.meetingTime.startDate,
+                    meetingFaculty.meetingTime.endDate)
                 )
             }
             if (meetingFaculty.meetingTime.tuesday) {
                 meetTimes.add(
                     MeetTime(meetingFaculty.meetingTime.beginTime,
                     meetingFaculty.meetingTime.endTime,
-                    DayOfWeek.TUESDAY)
+                    DayOfWeek.TUESDAY,
+                    meetingFaculty.meetingTime.startDate,
+                    meetingFaculty.meetingTime.endDate)
                 )
             }
             if (meetingFaculty.meetingTime.wednesday) {
                 meetTimes.add(
                     MeetTime(meetingFaculty.meetingTime.beginTime,
                     meetingFaculty.meetingTime.endTime,
-                    DayOfWeek.WEDNESDAY)
+                    DayOfWeek.WEDNESDAY,
+                    meetingFaculty.meetingTime.startDate,
+                    meetingFaculty.meetingTime.endDate)
                 )
             }
             if (meetingFaculty.meetingTime.thursday) {
                 meetTimes.add(
                     MeetTime(meetingFaculty.meetingTime.beginTime,
                     meetingFaculty.meetingTime.endTime,
-                    DayOfWeek.THURSDAY)
+                    DayOfWeek.THURSDAY,
+                    meetingFaculty.meetingTime.startDate,
+                    meetingFaculty.meetingTime.endDate)
                 )
             }
             if (meetingFaculty.meetingTime.friday) {
                 meetTimes.add(
                     MeetTime(meetingFaculty.meetingTime.beginTime,
                     meetingFaculty.meetingTime.endTime,
-                    DayOfWeek.FRIDAY)
+                    DayOfWeek.FRIDAY,
+                    meetingFaculty.meetingTime.startDate,
+                    meetingFaculty.meetingTime.endDate)
                 )
             }
             if (meetingFaculty.meetingTime.saturday) {
                 meetTimes.add(
                     MeetTime(meetingFaculty.meetingTime.beginTime,
                     meetingFaculty.meetingTime.endTime,
-                    DayOfWeek.SATURDAY)
+                    DayOfWeek.SATURDAY,
+                    meetingFaculty.meetingTime.startDate,
+                    meetingFaculty.meetingTime.endDate)
                 )
             }
             if (meetingFaculty.meetingTime.sunday) {
                 meetTimes.add(
                     MeetTime(meetingFaculty.meetingTime.beginTime,
                     meetingFaculty.meetingTime.endTime,
-                    DayOfWeek.SUNDAY)
+                    DayOfWeek.SUNDAY,
+                    meetingFaculty.meetingTime.startDate,
+                    meetingFaculty.meetingTime.endDate)
                 )
             }
         }
