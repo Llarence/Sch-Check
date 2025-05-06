@@ -11,9 +11,22 @@ import kotlin.random.Random
 data class MeetTime(val start: DayTime, val end: DayTime, val day: DayOfWeek,
                     @Serializable(with=DateSerializer::class) val startDate: Date,
                     @Serializable(with=DateSerializer::class) val endDate: Date) {
+    val probFinal by lazy { startDate == endDate }
+
     fun intersects(other: MeetTime): Boolean {
         if (day == other.day) {
             if (!(end.inMinutes < other.start.inMinutes || other.end.inMinutes < start.inMinutes)) {
+                return !(endDate.before(other.startDate) || other.endDate.before(startDate))
+            }
+        }
+
+        return false
+    }
+
+    fun intersects(other: MeetTime, buffer: Int): Boolean {
+        if (day == other.day) {
+            if (start.inMinutes - other.end.inMinutes <= buffer ||
+                other.start.inMinutes - end.inMinutes <= buffer) {
                 return !(endDate.before(other.startDate) || other.endDate.before(startDate))
             }
         }
@@ -179,12 +192,9 @@ fun addLinks(schedule: MutableSet<ClassData>, scheduleMeetTimes: MutableList<Mee
 fun adjacent(first: ClassData, second: ClassData, deltaMinutes: Int): Boolean {
     for (firstMeetTime in first.meetTimes) {
         for (secondMeetTime in second.meetTimes) {
-            if (firstMeetTime.day == secondMeetTime.day) {
-                if (firstMeetTime.start.inMinutes - secondMeetTime.end.inMinutes <= deltaMinutes ||
-                    secondMeetTime.start.inMinutes - firstMeetTime.end.inMinutes <= deltaMinutes) {
-                    return true
-                }
-            }
+           if (firstMeetTime.intersects(secondMeetTime, deltaMinutes)) {
+               return true
+           }
         }
     }
 

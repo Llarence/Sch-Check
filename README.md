@@ -28,10 +28,10 @@ The OSU Schedule Generator helps users create customized schedules by selecting 
 
 ### 3. Set Evaluation Criteria
 
-- After saving your schedule preferences, the app will show a set of criteria used to evaluate different schedules. The evaluation formula is based on the sum of the following:
-   1. **Credits**: `Number of Credits * Credit Value`
-   2. **Adjacency**: `Number of Adjacent Classes * Adjacent Value`
-   3. **Target Time** and **Minute Distance Value**: `For each class: Minutes from Target Time * Minute Distance Value` (Essentially tries to group classes around a time)
+- After saving your schedule preferences, the app will show a set of criteria used to evaluate different schedules. The evaluation formula is based on the following:
+   1. **Credits**: Plus `Number of Credits * Credit Value`
+   2. **Adjacency**: Plus `Number of Adjacent Classes * Adjacent Value`
+   3. **Target Time** and **Minute Distance Value**: Minus the sum `For each class: Minutes from Target Time * Minute Distance Value` (Essentially tries to group classes around a time) (Note: Making this too big relative to `Credit Value` can cause classes to not show up since this multiplies minutes it will create huge negatives scores for classes if it is to big)
 - You can save and load these settings to/from the `saves` directory for future use using text field and save load buttons at the top.
 
 ### 4. Generate and View Schedules
