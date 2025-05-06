@@ -160,9 +160,10 @@ class CalendarPage : Page() {
                 }
 
                 // TODO: Make the entry un-modifiable
+                // TODO: Explain the criteria for it assuming a final
                 val entry = Entry<Nothing>(
                     "CRN: ${classDatum.crn}, Title: ${classDatum.title}" +
-                            if (meetTime == null) { ", NOT IN PERSON" } else { "" },
+                            if (meetTime == null) { ", NOT IN PERSON" } else { if (meetTime.probFinal) { ", FINAL*" } else { "" } },
                     interval
                 )
 
