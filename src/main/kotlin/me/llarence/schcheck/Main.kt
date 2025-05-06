@@ -32,6 +32,10 @@ class App : Application() {
 
         stage.centerOnScreen()
 
+        Runtime.getRuntime().addShutdownHook(Thread {
+            saveCache()
+        })
+
         stage.setOnCloseRequest {
             Platform.exit()
             exitProcess(0)
@@ -79,10 +83,6 @@ class App : Application() {
         stage.scene = scene
 
         stage.show()
-    }
-
-    override fun stop() {
-       saveCache()
     }
 
     private fun transitionToCalendar(scheduleViewer: CalendarPage,

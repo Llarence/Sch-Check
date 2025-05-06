@@ -69,10 +69,10 @@ class RequestResponseCache(private val file: File,
     init {
         val fileStream = FileInputStream(file)
 
-        if (fileStream.available() == 0) {
-            data = mutableMapOf()
+        data = if (fileStream.available() == 0) {
+            mutableMapOf()
         } else {
-            data = try {
+            try {
                 val gzipStream = GZIPInputStream(fileStream)
                 val read: MutableMap<String, Pair<String, SerializableInstant>> = cacheJson.decodeFromStream(gzipStream)
                 gzipStream.close()
@@ -85,7 +85,6 @@ class RequestResponseCache(private val file: File,
         fileStream.close()
 
         calcSize()
-        save()
     }
 
     // Could include the size of the instant
